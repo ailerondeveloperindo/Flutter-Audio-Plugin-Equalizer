@@ -1,15 +1,17 @@
 package com.hifi.turntableplugin.internal_hifi_plugin
 
-import android.content.ContentResolver
 import android.content.Context
 import android.media.MediaMetadataRetriever
 import android.media.audiofx.Equalizer
-import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
+import android.os.Message
 import android.provider.MediaStore
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
+import androidx.lifecycle.*
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Metadata
@@ -20,25 +22,28 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.MetadataRetriever
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.activity.ActivityAware
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
+import io.flutter.embedding.engine.plugins.lifecycle.FlutterLifecycleAdapter
+import io.flutter.embedding.engine.plugins.lifecycle.HiddenLifecycleReference
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.runBlocking
-import java.io.File
 import java.io.IOException
 
 
 /** InternalHifiPlugin */
 @OptIn(UnstableApi::class)
-class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, HifiPluginPlayer {
+class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer {
     /// The MethodChannel that will the communication between Flutter and native Android
     ///
     /// This local reference serves to register the plugin with the Flutter Engine and unregister it
@@ -46,12 +51,9 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, HifiPluginPlayer {
     private lateinit var playStatusEventChannel: EventChannel
     private lateinit var positionTrackingChannel: EventChannel
     private fun positionTrackingFlow(): Flow<Long> = flow {
-        while (true) {
-            if(player.isPlaying)
-            {
+        while (player.isPlaying) {
                 emit(player.currentPosition)
                 kotlinx.coroutines.delay(1000)
-            }
         }
 
     }
@@ -68,6 +70,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, HifiPluginPlayer {
         //TODO: Create channel for tracking currentPosition and currentTrack
         //TODO: Refractor to several methods, to ease development
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "internal_hifi_plugin")
+
         player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).build()
         context = flutterPluginBinding.applicationContext
         player.addListener(object : Player.Listener {
@@ -85,9 +88,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, HifiPluginPlayer {
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 super.onIsPlayingChanged(isPlaying)
-                if (isPlaying) {
-                    eventsStatus?.success(player.currentPosition)
-                }
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -134,21 +134,11 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, HifiPluginPlayer {
                 this@InternalHifiPlugin.eventsPositionTracking = null
             }
         })
-        val flow = positionTrackingFlow()
+
         /* TODO: Will this run on the main thread? Player should be on separate thread
             Currently, if the event position value is being tracked, it blocks the main UI thread preventing app to show the flutter UI
         */
         channel.setMethodCallHandler(this)
-//        runBlocking {
-//            launch() {
-//                flow.collect { value ->
-//                    Log.d(
-//                        "EventPositionTracking",
-//                        value.toString()
-//                    ); eventsPositionTracking?.success(value)
-//                }
-//            }
-//        }
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -242,5 +232,31 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, HifiPluginPlayer {
         } catch (e: IOException) {
             Log.e("HifiPluginPlayer Error", e.message.toString())
         }
+    }
+
+    override fun onAttachedToActivity(binding: ActivityPluginBinding) {
+        var lifecycle = FlutterLifecycleAdapter.getActivityLifecycle(binding)
+        lifecycle.addObserver(LifecycleEventObserver { x, event ->
+            if(x.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                val flow = positionTrackingFlow()
+                x.lifecycle.coroutineScope.launch {
+                    flow.collect {
+                        Log.d("HifiPlugin", "collected $it")
+                    }
+                }
+            }
+        })
+    }
+
+    override fun onDetachedFromActivityForConfigChanges() {
+        TODO("Not yet implemented")
+    }
+
+    override fun onReattachedToActivityForConfigChanges(binding: ActivityPluginBinding) {
+        TODO("Not yet implemented")
+    }
+
+    override fun onDetachedFromActivity() {
+        TODO("Not yet implemented")
     }
 }
