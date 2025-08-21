@@ -46,9 +46,12 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, HifiPluginPlayer {
     private lateinit var playStatusEventChannel: EventChannel
     private lateinit var positionTrackingChannel: EventChannel
     private fun positionTrackingFlow(): Flow<Long> = flow {
-        while (player.isPlaying) {
-            emit(player.currentPosition)
-            kotlinx.coroutines.delay(1000)
+        while (true) {
+            if(player.isPlaying)
+            {
+                emit(player.currentPosition)
+                kotlinx.coroutines.delay(1000)
+            }
         }
 
     }
@@ -132,18 +135,20 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, HifiPluginPlayer {
             }
         })
         val flow = positionTrackingFlow()
-        // TODO: Will this run on the main thread?
-        runBlocking {
-            launch(newSingleThreadContext("positionTrackingThread")) {
-                flow.collect { value ->
-                    Log.d(
-                        "EventPositionTracking",
-                        value.toString()
-                    ); eventsPositionTracking?.success(value)
-                }
-            }
-        }
+        /* TODO: Will this run on the main thread? Player should be on separate thread
+            Currently, if the event position value is being tracked, it blocks the main UI thread preventing app to show the flutter UI
+        */
         channel.setMethodCallHandler(this)
+//        runBlocking {
+//            launch() {
+//                flow.collect { value ->
+//                    Log.d(
+//                        "EventPositionTracking",
+//                        value.toString()
+//                    ); eventsPositionTracking?.success(value)
+//                }
+//            }
+//        }
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
