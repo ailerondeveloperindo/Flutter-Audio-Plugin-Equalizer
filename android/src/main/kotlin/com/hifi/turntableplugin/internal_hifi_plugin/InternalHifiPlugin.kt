@@ -44,10 +44,6 @@ import java.io.IOException
 /** InternalHifiPlugin */
 @OptIn(UnstableApi::class)
 class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer {
-    /// The MethodChannel that will the communication between Flutter and native Android
-    ///
-    /// This local reference serves to register the plugin with the Flutter Engine and unregister it
-    /// when the Flutter Engine is detached from the Activity
     private lateinit var playStatusEventChannel: EventChannel
     private lateinit var positionTrackingChannel: EventChannel
     private fun positionTrackingFlow(): Flow<Long> = flow {
@@ -75,7 +71,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
         //TODO: Create channel for tracking currentPosition and currentTrack
         //TODO: Refractor to several methods, to ease development
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "internal_hifi_plugin")
-
+        channel.setMethodCallHandler(this)
         player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).build()
         context = flutterPluginBinding.applicationContext
         player.addListener(object : Player.Listener {
@@ -112,38 +108,23 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
                 super.onMetadata(metadata)
             }
         })
-        playStatusEventChannel = EventChannel(
-            flutterPluginBinding.binaryMessenger,
-            "internal_hifi_plugin/play_status_events"
-        )
+
+        // https://blog.stackademic.com/understanding-event-channel-and-method-channel-in-flutter-and-dart-9134d6a8ceba
+
         positionTrackingChannel = EventChannel(
             flutterPluginBinding.binaryMessenger,
-            "internal_hifi_plugin/positionTracking"
+            "zr_450dfsfds"
         )
-        // https://blog.stackademic.com/understanding-event-channel-and-method-channel-in-flutter-and-dart-9134d6a8ceba
-        playStatusEventChannel.setStreamHandler(object : EventChannel.StreamHandler {
-            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                this@InternalHifiPlugin.eventsStatus = events
-            }
-
-            override fun onCancel(arguments: Any?) {
-                this@InternalHifiPlugin.eventsStatus = null
-            }
-        })
         positionTrackingChannel.setStreamHandler(object : EventChannel.StreamHandler {
-            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
-                this@InternalHifiPlugin.eventsPositionTracking = events
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+                Log.d("TrackingChannel", "Setting Up EventChannel")
+                eventsPositionTracking = events
             }
 
             override fun onCancel(arguments: Any?) {
-                this@InternalHifiPlugin.eventsPositionTracking = null
+                eventsPositionTracking = null
             }
         })
-
-        /* TODO: Will this run on the main thread? Player should be on separate thread
-            Currently, if the event position value is being tracked, it blocks the main UI thread preventing app to show the flutter UI
-        */
-        channel.setMethodCallHandler(this)
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -241,11 +222,14 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         var lifecycle = FlutterLifecycleAdapter.getActivityLifecycle(binding)
-        lifecycle.addObserver(LifecycleEventObserver { x, event ->
+        //TODO: HifiPlugin should derive from LifecycleObserver class
+        lifecycle.addObserver(LifecycleEventObserver { x, _ ->
             lifecycle.coroutineScope.launch {
                 x.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     positionTrackingFlow().collect {
-                        Log.i("HifiPlugin", "Current Position $it")
+                        Log.d("Current Position Tracked", it.toString())
+                        Log.d("EventHandlerss", eventsPositionTracking.toString())
+                        eventsPositionTracking?.success(it)
                     }
                 }
             }
