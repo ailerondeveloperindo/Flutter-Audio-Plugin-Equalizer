@@ -51,9 +51,14 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     private lateinit var playStatusEventChannel: EventChannel
     private lateinit var positionTrackingChannel: EventChannel
     private fun positionTrackingFlow(): Flow<Long> = flow {
-        while (player.isPlaying) {
+        while (true) {
+            if(player.isPlaying)
+            {
                 emit(player.currentPosition)
-                kotlinx.coroutines.delay(1000)
+
+            }
+            kotlinx.coroutines.delay(1000)
+
         }
 
     }
@@ -237,11 +242,10 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         var lifecycle = FlutterLifecycleAdapter.getActivityLifecycle(binding)
         lifecycle.addObserver(LifecycleEventObserver { x, event ->
-            if(x.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-                val flow = positionTrackingFlow()
-                x.lifecycle.coroutineScope.launch {
-                    flow.collect {
-                        Log.d("HifiPlugin", "collected $it")
+            lifecycle.coroutineScope.launch {
+                x.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                    positionTrackingFlow().collect {
+                        Log.i("HifiPlugin", "Current Position $it")
                     }
                 }
             }
