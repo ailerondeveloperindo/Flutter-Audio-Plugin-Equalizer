@@ -1,0 +1,37 @@
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
+import 'internal_hifi_plugin_method_channel.dart';
+
+abstract class InternalHifiPluginPlatform extends PlatformInterface {
+  /// Constructs a InternalHifiPluginPlatform.
+  InternalHifiPluginPlatform() : super(token: _token);
+
+  static final Object _token = Object();
+
+  static InternalHifiPluginPlatform _instance = MethodChannelInternalHifiPlugin();
+
+  /// The default instance of [InternalHifiPluginPlatform] to use.
+  ///
+  /// Defaults to [MethodChannelInternalHifiPlugin].
+  static InternalHifiPluginPlatform get instance => _instance;
+
+  /// Platform-specific implementations should set this with their own
+  /// platform-specific class that extends [InternalHifiPluginPlatform] when
+  /// they register themselves.
+  static set instance(InternalHifiPluginPlatform instance) {
+    PlatformInterface.verifyToken(instance, _token);
+    _instance = instance;
+  }
+
+  Future<String?> getPlatformVersion() {
+    throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+  Future<String?> addToPlaylist(String uri) {
+        throw UnimplementedError('addToPlaylist(String uri) has not been implemented.');
+  }
+
+  Future<String?> playPlaylist() {
+        throw UnimplementedError('playPlaylist has not been implemented.');
+  }
+}
