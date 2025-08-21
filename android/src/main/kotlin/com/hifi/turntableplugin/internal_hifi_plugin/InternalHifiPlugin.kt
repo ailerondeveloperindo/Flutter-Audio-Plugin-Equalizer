@@ -25,9 +25,12 @@ import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.guava.await
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.io.IOException
@@ -57,6 +60,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, HifiPluginPlayer {
     private lateinit var channel: MethodChannel
     private lateinit var eq: Equalizer
 
+    @kotlin.OptIn(ExperimentalCoroutinesApi::class)
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         //TODO: Create channel for tracking currentPosition and currentTrack
         //TODO: Refractor to several methods, to ease development
@@ -127,6 +131,18 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, HifiPluginPlayer {
                 this@InternalHifiPlugin.eventsPositionTracking = null
             }
         })
+        val flow = positionTrackingFlow()
+        // TODO: Will this run on the main thread?
+        runBlocking {
+            launch(newSingleThreadContext("positionTrackingThread")) {
+                flow.collect { value ->
+                    Log.d(
+                        "EventPositionTracking",
+                        value.toString()
+                    ); eventsPositionTracking?.success(value)
+                }
+            }
+        }
         channel.setMethodCallHandler(this)
     }
 
@@ -134,17 +150,11 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, HifiPluginPlayer {
     override fun onMethodCall(call: MethodCall, result: Result) {
         try {
             if (call.method == "addSongToPlaylist") {
-//                    addSongToPlaylist("file://"+Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/04 Joy Spring.m4a")
-                val zr =
-                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                val vra = zr.listFiles()
-                runBlocking {
-                    getMetadataWithoutPlayback(
-                        "file://" + Environment.getExternalStoragePublicDirectory(
-                            Environment.DIRECTORY_DOWNLOADS
-                        ) + "/04 Joy Spring.m4a"
-                    )
-                }
+                addSongToPlaylist(
+                    "file://" + Environment.getExternalStoragePublicDirectory(
+                        Environment.DIRECTORY_DOWNLOADS
+                    ) + "/04 Joy Spring.m4a"
+                )
                 result.success("hifiPluginPlayer initialized")
             } else if (call.method == "playPlaylist") {
                 playPlaylist()
