@@ -17,11 +17,21 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
+  String currentPosition = '0';
+  final EventChannel trackingPositionChannel = EventChannel(
+    "zr_450dfsfds",
+  );
   final _internalHifiPlugin = InternalHifiPlugin();
 
   @override
   void initState() {
     super.initState();
+    trackingPositionChannel.receiveBroadcastStream().listen((dynamic event) {
+      print("CurrentPosition -> " + event.toString());
+      setState(() {
+        currentPosition = event.toString();
+      });
+    });
     initPlatformState();
   }
 
@@ -33,7 +43,8 @@ class _MyAppState extends State<MyApp> {
     try {
       await _internalHifiPlugin.addToPlaylist("sdasd");
       platformVersion =
-          await _internalHifiPlugin.playPlaylist() ?? 'Unknown platform version';
+          await _internalHifiPlugin.playPlaylist() ??
+          'Unknown platform version';
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -52,12 +63,8 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
-          child: Text('Running on: $_platformVersion\n'),
-        ),
+        appBar: AppBar(title: const Text('Plugin example app')),
+        body: Center(child: Text('Running on: $currentPosition\n')),
       ),
     );
   }
