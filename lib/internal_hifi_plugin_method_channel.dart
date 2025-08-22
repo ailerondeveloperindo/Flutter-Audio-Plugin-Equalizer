@@ -26,4 +26,10 @@ class MethodChannelInternalHifiPlugin extends InternalHifiPluginPlatform {
     // TODO: implement playPlaylist
     return await methodChannel.invokeMethod<String>('playPlaylist');
   }
+
+  @override
+  Future<void> stopPlaylist() async {
+    // TODO: implement stopPlaylist
+    await methodChannel.invokeMethod<String>('stopPlaylist');
+  }
 }

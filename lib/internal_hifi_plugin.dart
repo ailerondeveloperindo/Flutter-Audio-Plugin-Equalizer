@@ -10,4 +10,8 @@ class InternalHifiPlugin {
   Future<String?> playPlaylist() {
     return InternalHifiPluginPlatform.instance.playPlaylist();
   }
+
+    Future<void> stopPlaylist() {
+    return InternalHifiPluginPlatform.instance.stopPlaylist();
+  }
 }

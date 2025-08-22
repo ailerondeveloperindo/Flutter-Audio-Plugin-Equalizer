@@ -58,7 +58,7 @@ class HifiPluginPlayerImpl
         }
     }
 
-    override fun stopPlaylist(result: MethodChannel.Result)
+    override fun stopPlaylist()
     {
         if(player.isPlaying)
         {

@@ -5,7 +5,7 @@ import io.flutter.plugin.common.MethodChannel
 interface HifiPluginPlayer {
     fun addSongToPlaylist(uri: String)
     fun playPlaylist()
-    fun stopPlaylist(result: MethodChannel.Result)
+    fun stopPlaylist()
     suspend fun getMetadataWithoutPlayback(uri: String)
 
 }

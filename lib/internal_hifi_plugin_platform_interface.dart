@@ -34,4 +34,8 @@ abstract class InternalHifiPluginPlatform extends PlatformInterface {
   Future<String?> playPlaylist() {
         throw UnimplementedError('playPlaylist has not been implemented.');
   }
+
+  Future<void> stopPlaylist(){
+    throw UnimplementedError('stopPlaylist has not been implemented.');
+  }
 }

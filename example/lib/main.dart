@@ -19,9 +19,18 @@ class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   String currentPosition = '0';
   final EventChannel trackingPositionChannel = EventChannel(
-    "zr_450dfsfds",
+    "internal_hifi_plugin_baseEventChannel/posTrackEventChannel",
   );
   final _internalHifiPlugin = InternalHifiPlugin();
+
+  String formatPositionMStoMinuteFormat(String t) {
+    var dt = Duration(milliseconds: int.parse(t));
+    String negativeSign = dt.isNegative ? '-' : '';
+    String twoDigits(int n) => n.toString().padLeft(2, "0");
+    String twoDigitMinutes = twoDigits(dt.inMinutes.remainder(60).abs());
+    String twoDigitSeconds = twoDigits(dt.inSeconds.remainder(60).abs());
+    return "${twoDigitMinutes} : ${twoDigitSeconds}";
+  }
 
   @override
   void initState() {
@@ -29,7 +38,7 @@ class _MyAppState extends State<MyApp> {
     trackingPositionChannel.receiveBroadcastStream().listen((dynamic event) {
       print("CurrentPosition -> " + event.toString());
       setState(() {
-        currentPosition = event.toString();
+        currentPosition = formatPositionMStoMinuteFormat(event.toString());
       });
     });
     initPlatformState();
@@ -42,9 +51,6 @@ class _MyAppState extends State<MyApp> {
     // We also handle the message potentially returning null.
     try {
       await _internalHifiPlugin.addToPlaylist("sdasd");
-      platformVersion =
-          await _internalHifiPlugin.playPlaylist() ??
-          'Unknown platform version';
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -53,10 +59,6 @@ class _MyAppState extends State<MyApp> {
     // message was in flight, we want to discard the reply rather than calling
     // setState to update our non-existent appearance.
     if (!mounted) return;
-
-    setState(() {
-      _platformVersion = platformVersion;
-    });
   }
 
   @override
@@ -64,7 +66,23 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: const Text('Plugin example app')),
-        body: Center(child: Text('Running on: $currentPosition\n')),
+        body: Column(
+          children: [
+            Text('Running on: $currentPosition\n'),
+            ElevatedButton(
+              onPressed: () async {
+                await _internalHifiPlugin.playPlaylist();
+              },
+              child: Text("Play Song"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await _internalHifiPlugin.stopPlaylist();
+              },
+              child: Text("Stop Song"),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -5,9 +5,6 @@ import android.media.MediaMetadataRetriever
 import android.media.audiofx.Equalizer
 import android.os.Build
 import android.os.Environment
-import android.os.Handler
-import android.os.Looper
-import android.os.Message
 import android.provider.MediaStore
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
@@ -17,6 +14,7 @@ import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Metadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+//import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.MetadataRetriever
@@ -41,51 +39,15 @@ import kotlinx.coroutines.runBlocking
 import java.io.IOException
 
 
-open class PlayerListenerCallbacks : Player.Listener{
-    protected lateinit var player: ExoPlayer
-    override fun onPlayerErrorChanged(error: PlaybackException?) {
-        super.onPlayerErrorChanged(error)
-        Log.e("onPlayerErrorChanged", error.toString())
-    }
-
-    override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) {
-        super.onPlaylistMetadataChanged(mediaMetadata)
-        Log.d("onPlaylistMetadataChanged", mediaMetadata.toString())
-    }
-
-    override fun onIsPlayingChanged(isPlaying: Boolean) {
-        super.onIsPlayingChanged(isPlaying)
-        Log.d("onIsPlayingChanged", isPlaying.toString())
-    }
-
-    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-        //TODO: Get Mediaitem MetaData
-        super.onMediaItemTransition(mediaItem, reason)
-        Log.d("onMetaItemTransition", mediaItem.toString())
-    }
-
-    override fun onPlayerError(error: PlaybackException) {
-        // TODO: Send error to flutter
-        super.onPlayerError(error)
-        Log.e("onPlayerError", error.toString())
-    }
-
-    override fun onMetadata(metadata: Metadata) {
-        // TODO: Retrieve album cover, title, etc
-        super.onMetadata(metadata)
-        Log.d("onMetadata", metadata.toString())
-    }
-}
-
 /** InternalHifiPlugin */
 @OptIn(UnstableApi::class)
-class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer,
-    PlayerListenerCallbacks() {
-    lateinit var positionTrackingChannel: EventChannel
+class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer {
+    private lateinit var positionTrackingChannel: EventChannel
+    private lateinit var playStateChannel: EventChannel
+    protected lateinit var player: ExoPlayer
     private fun positionTrackingFlow(): Flow<Long> = flow {
         while (true) {
-            if(player.isPlaying)
-            {
+            if (player.isPlaying) {
                 emit(player.currentPosition)
 
             }
@@ -97,6 +59,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
     private lateinit var context: Context
     private var eventsPositionTracking: EventChannel.EventSink? = null
+    private var eventsStateTracking: EventChannel.EventSink? = null
     private lateinit var channel: MethodChannel
     private lateinit var audioProcessor: AudioProcessor
 
@@ -106,11 +69,50 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
         channel.setMethodCallHandler(this)
         context = flutterPluginBinding.applicationContext
         player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).build()
-        player.addListener(this)
+        player.addListener(object : Player.Listener {
+            override fun onPlayerErrorChanged(error: PlaybackException?) {
+                Log.e("HifiPlugin - onPlayerErrorChanged", error.toString())
+
+            }
+
+            override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) {
+                Log.d("HifiPlugin - onPlaylistMetadataChanged", mediaMetadata.toString())
+
+            }
+
+            /* Called when track is either in play or stop state */
+            override fun onIsPlayingChanged(isPlaying: Boolean) {
+                Log.d("HifiPlugin - onIsPlayingChanged", isPlaying.toString())
+
+            }
+
+            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+                //TODO: Get Mediaitem MetaData
+                Log.d("HifiPlugin - onMetaItemTransition", mediaItem.toString())
+
+
+            }
+
+            override fun onPlayerError(error: PlaybackException) {
+                // TODO: Send error to flutter
+                Log.e("HifiPlugin - onPlayerError", error.toString())
+
+            }
+
+            override fun onMetadata(metadata: Metadata) {
+                // TODO: Retrieve album cover, title, etc
+                Log.d("HifiPlugin - onMetadata", metadata.toString())
+
+            }
+        })
 
         positionTrackingChannel = EventChannel(
             flutterPluginBinding.binaryMessenger,
             PluginConstants.posTrackEventChannel
+        )
+        playStateChannel = EventChannel(
+            flutterPluginBinding.binaryMessenger,
+            PluginConstants.playStateEventChannel
         )
         positionTrackingChannel.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
@@ -120,6 +122,18 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
             override fun onCancel(arguments: Any?) {
                 eventsPositionTracking = null
+            }
+        })
+
+        playStateChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onCancel(arguments: Any?) {
+                Log.d("PlayStateChannel", "Cancelling EventChannel")
+                eventsStateTracking = null
+            }
+
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                Log.d("playStateChannel", "Setting Up EventChannel")
+                eventsStateTracking = events
             }
         })
     }
@@ -137,10 +151,22 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             } else if (call.method == "playPlaylist") {
                 playPlaylist()
                 result.success("Play Song")
-            } else if(call.method == "stopPlaylist")
-            {
+            } else if (call.method == "stopPlaylist") {
+                stopPlaylist()
+                result.success("Stop Song")
+            } else if(call.method == "skipSong") {
+
+            } else if(call.method == "pausePlaylist") {
 
             }
+            else if(call.method == "nextTrack"){
+
+            }
+            else if(call.method == "previousTrack") {
+
+            } else if(call.method == "rewindTrack"){
+
+            } else if(call.method == "reverseTrack")
             else {
                 result.notImplemented()
             }
@@ -185,13 +211,12 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     }
 
 
-    override fun stopPlaylist(result: Result){
+    override fun stopPlaylist() {
         try {
-            if(player.isPlaying) {
+            if (player.isPlaying) {
                 player.stop()
             }
-        }
-        catch (e : Exception) {
+        } catch (e: Exception) {
             Log.e("HifiPluginPlayer Error", e.message.toString())
         }
 
