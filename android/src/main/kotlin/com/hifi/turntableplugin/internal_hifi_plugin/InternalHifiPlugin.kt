@@ -74,7 +74,10 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
                 // Player.STATE_IDLE, Player.STATE_BUFFERING, Player.STATE_READY, Player.STATE_ENDED
                 // Executes during playback state change
                 Log.d("onPlaylistMetadataChanged", playbackState.toString())
-                super.onPlaybackStateChanged(playbackState)
+                if(Player.STATE_READY == playbackState)
+                {
+                    Log.d("PlaybackState", "Ended, No Mediaitem on playlist")
+                }
             }
 
             override fun onPlayerErrorChanged(error: PlaybackException?) {
@@ -149,11 +152,12 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     override fun onMethodCall(call: MethodCall, result: Result) {
         try {
             if (call.method == "addSongToPlaylist") {
-                addSongToPlaylist(
-                    "file://" + Environment.getExternalStoragePublicDirectory(
-                        Environment.DIRECTORY_DOWNLOADS
-                    ) + "/04 Joy Spring.m4a"
-                )
+//                addSongToPlaylist(
+//                    "file://" + Environment.getExternalStoragePublicDirectory(
+//                        Environment.DIRECTORY_DOWNLOADS
+//                    ) + "/04 Joy Spring.m4a"
+//                )
+                addSongToPlaylist((call.arguments as ArrayList<*>)[0].toString())
                 result.success("hifiPluginPlayer initialized")
             } else if (call.method == "playPlaylist") {
                 playPlaylist()
@@ -192,6 +196,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     override fun addSongToPlaylist(uri: String) {
         val mediaItem = MediaItem.fromUri(uri)
         // TODO: Check for duplicate songs
+        // TODO: Check if url invalid
 //        if(player.mediaItemCount > 0)
 //        {
 //            for(i in 0 until player.mediaItemCount)

@@ -4,4 +4,5 @@ object PluginConstants {
     private var baseEventChannelName: String = "internal_hifi_plugin_baseEventChannel"
     var posTrackEventChannel : String = this.baseEventChannelName + "/posTrackEventChannel"
     var playStateEventChannel : String = this.baseEventChannelName + "/playStateEventChannel"
+    var errorEventChannel : String = this.baseEventChannelName + "/errorEventChannel"
 }

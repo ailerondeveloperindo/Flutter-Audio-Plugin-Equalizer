@@ -18,7 +18,7 @@ class MethodChannelInternalHifiPlugin extends InternalHifiPluginPlatform {
   @override
   Future<String?> addToPlaylist(String uri) async {
     // TODO: implement addToPlaylist
-    return await methodChannel.invokeMethod<String>('addSongToPlaylist');
+    return await methodChannel.invokeMethod<String>('addSongToPlaylist',[uri]);
   }
 
   @override
