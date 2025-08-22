@@ -41,6 +41,8 @@ import kotlinx.coroutines.runBlocking
 import java.io.IOException
 
 
+class PlayerCallbacks
+
 /** InternalHifiPlugin */
 @OptIn(UnstableApi::class)
 class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer {
@@ -75,41 +77,40 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
         player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).build()
         context = flutterPluginBinding.applicationContext
         player.addListener(object : Player.Listener {
-//            override fun onEvents(player: Player, events: Player.Events) {
-//                super.onEvents(player, events)
-//            }
-
             override fun onPlayerErrorChanged(error: PlaybackException?) {
                 super.onPlayerErrorChanged(error)
+                Log.e("onPlayerErrorChanged", error.toString())
             }
 
             override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) {
                 super.onPlaylistMetadataChanged(mediaMetadata)
+                Log.d("onPlaylistMetadataChanged", mediaMetadata.toString())
             }
 
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 super.onIsPlayingChanged(isPlaying)
+                Log.d("onIsPlayingChanged", isPlaying.toString())
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 //TODO: Get Mediaitem MetaData
                 super.onMediaItemTransition(mediaItem, reason)
-                eventsStatus?.success("a")
+                Log.d("onMetaItemTransition", mediaItem.toString())
             }
 
             override fun onPlayerError(error: PlaybackException) {
                 // TODO: Send error to flutter
                 super.onPlayerError(error)
+                Log.e("onPlayerError", error.toString())
                 eventsStatus?.error("b", error.message, "error")
             }
 
             override fun onMetadata(metadata: Metadata) {
                 // TODO: Retrieve album cover, title, etc
                 super.onMetadata(metadata)
+                Log.d("onMetadata", metadata.toString())
             }
         })
-
-        // https://blog.stackademic.com/understanding-event-channel-and-method-channel-in-flutter-and-dart-9134d6a8ceba
 
         positionTrackingChannel = EventChannel(
             flutterPluginBinding.binaryMessenger,
@@ -140,7 +141,11 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             } else if (call.method == "playPlaylist") {
                 playPlaylist()
                 result.success("Play Song")
-            } else {
+            } else if(call.method == "stopPlaylist")
+            {
+
+            }
+            else {
                 result.notImplemented()
             }
         } catch (e: Exception) {
@@ -173,24 +178,27 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun playPlaylist() {
-        val mediaItem =
-            MediaItem.fromUri("file://" + Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/04 Joy Spring.m4a")
-        val mediaItem2 =
-            MediaItem.fromUri("file://" + Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) + "/04 Joy Spring.flac")
-        player.addMediaItem(mediaItem)
-        player.addMediaItem(mediaItem2)
         if (!player.isPlaying) {
-            eq = Equalizer(0, player.audioSessionId)
-            eq.usePreset(2)
-            Log.d("Equalizer ---", eq.numberOfPresets.toString())
-            Log.d("Equalizer Current Preset ---", eq.currentPreset.toString())
+//            eq = Equalizer(0, player.audioSessionId)
+//            eq.usePreset(2)
+//            Log.d("Equalizer ---", eq.numberOfPresets.toString())
+//            Log.d("Equalizer Current Preset ---", eq.currentPreset.toString())
             player.prepare()
             player.play()
         }
     }
 
-    override fun stopPlaylist(result: Result) {
-        TODO("Not yet implemented")
+
+    override fun stopPlaylist(result: Result){
+        try {
+            if(player.isPlaying) {
+                player.stop()
+            }
+        }
+        catch (e : Exception) {
+            Log.e("HifiPluginPlayer Error", e.message.toString())
+        }
+
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
