@@ -8,4 +8,9 @@ class AudioProcessor(private var eq: Equalizer)  {
     {
 
     }
+
+    fun getAvailableEQBands() : Short
+    {
+        return eq.numberOfBands
+    }
 }

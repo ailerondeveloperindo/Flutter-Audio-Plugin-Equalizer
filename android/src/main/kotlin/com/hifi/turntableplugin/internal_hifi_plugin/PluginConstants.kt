@@ -1,0 +1,7 @@
+package com.hifi.turntableplugin.internal_hifi_plugin
+
+object PluginConstants {
+    private var baseEventChannelName: String = "internal_hifi_plugin_baseEventChannel"
+    var posTrackEventChannel : String = this.baseEventChannelName + "posTrackEventChannel"
+    var playStateEventChannel : String = this.baseEventChannelName + "playStateEventChannel"
+}

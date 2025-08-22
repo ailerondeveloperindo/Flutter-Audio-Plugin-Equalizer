@@ -41,13 +41,47 @@ import kotlinx.coroutines.runBlocking
 import java.io.IOException
 
 
-class PlayerCallbacks
+open class PlayerListenerCallbacks : Player.Listener{
+    protected lateinit var player: ExoPlayer
+    override fun onPlayerErrorChanged(error: PlaybackException?) {
+        super.onPlayerErrorChanged(error)
+        Log.e("onPlayerErrorChanged", error.toString())
+    }
+
+    override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) {
+        super.onPlaylistMetadataChanged(mediaMetadata)
+        Log.d("onPlaylistMetadataChanged", mediaMetadata.toString())
+    }
+
+    override fun onIsPlayingChanged(isPlaying: Boolean) {
+        super.onIsPlayingChanged(isPlaying)
+        Log.d("onIsPlayingChanged", isPlaying.toString())
+    }
+
+    override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
+        //TODO: Get Mediaitem MetaData
+        super.onMediaItemTransition(mediaItem, reason)
+        Log.d("onMetaItemTransition", mediaItem.toString())
+    }
+
+    override fun onPlayerError(error: PlaybackException) {
+        // TODO: Send error to flutter
+        super.onPlayerError(error)
+        Log.e("onPlayerError", error.toString())
+    }
+
+    override fun onMetadata(metadata: Metadata) {
+        // TODO: Retrieve album cover, title, etc
+        super.onMetadata(metadata)
+        Log.d("onMetadata", metadata.toString())
+    }
+}
 
 /** InternalHifiPlugin */
 @OptIn(UnstableApi::class)
-class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer {
-    private lateinit var playStatusEventChannel: EventChannel
-    private lateinit var positionTrackingChannel: EventChannel
+class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer,
+    PlayerListenerCallbacks() {
+    lateinit var positionTrackingChannel: EventChannel
     private fun positionTrackingFlow(): Flow<Long> = flow {
         while (true) {
             if(player.isPlaying)
@@ -62,59 +96,21 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     }
 
     private lateinit var context: Context
-    private var eventsStatus: EventChannel.EventSink? = null
     private var eventsPositionTracking: EventChannel.EventSink? = null
-    private lateinit var player: ExoPlayer
     private lateinit var channel: MethodChannel
-    private lateinit var eq: Equalizer
+    private lateinit var audioProcessor: AudioProcessor
 
     @kotlin.OptIn(ExperimentalCoroutinesApi::class)
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-        //TODO: Create channel for tracking currentPosition and currentTrack
-        //TODO: Refractor to several methods, to ease development
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "internal_hifi_plugin")
         channel.setMethodCallHandler(this)
-        player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).build()
         context = flutterPluginBinding.applicationContext
-        player.addListener(object : Player.Listener {
-            override fun onPlayerErrorChanged(error: PlaybackException?) {
-                super.onPlayerErrorChanged(error)
-                Log.e("onPlayerErrorChanged", error.toString())
-            }
-
-            override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) {
-                super.onPlaylistMetadataChanged(mediaMetadata)
-                Log.d("onPlaylistMetadataChanged", mediaMetadata.toString())
-            }
-
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                super.onIsPlayingChanged(isPlaying)
-                Log.d("onIsPlayingChanged", isPlaying.toString())
-            }
-
-            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                //TODO: Get Mediaitem MetaData
-                super.onMediaItemTransition(mediaItem, reason)
-                Log.d("onMetaItemTransition", mediaItem.toString())
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                // TODO: Send error to flutter
-                super.onPlayerError(error)
-                Log.e("onPlayerError", error.toString())
-                eventsStatus?.error("b", error.message, "error")
-            }
-
-            override fun onMetadata(metadata: Metadata) {
-                // TODO: Retrieve album cover, title, etc
-                super.onMetadata(metadata)
-                Log.d("onMetadata", metadata.toString())
-            }
-        })
+        player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).build()
+        player.addListener(this)
 
         positionTrackingChannel = EventChannel(
             flutterPluginBinding.binaryMessenger,
-            "zr_450dfsfds"
+            PluginConstants.posTrackEventChannel
         )
         positionTrackingChannel.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
