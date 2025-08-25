@@ -2,6 +2,7 @@ package com.hifi.turntableplugin.internal_hifi_plugin
 
 import android.content.Context
 import android.media.MediaMetadataRetriever
+import android.media.audiofx.Equalizer
 import android.os.Build
 import android.provider.MediaStore
 import androidx.annotation.OptIn
@@ -62,6 +63,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     private lateinit var channel: MethodChannel
     private lateinit var audioProcessor: AudioProcessor
 
+
     @kotlin.OptIn(ExperimentalCoroutinesApi::class)
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "internal_hifi_plugin")
@@ -69,6 +71,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
         context = flutterPluginBinding.applicationContext
         player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).build()
         player.addListener(object : Player.Listener {
+
             override fun onPlaybackStateChanged(playbackState: Int) {
                 // Player.STATE_IDLE, Player.STATE_BUFFERING, Player.STATE_READY, Player.STATE_ENDED
                 // Executes during playback state change
@@ -84,9 +87,16 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
             }
 
+            override fun onAudioSessionIdChanged(audioSessionId: Int) {
+                audioProcessor = AudioProcessor(Equalizer(0, audioSessionId))
+                Log.d("Available Bands", audioProcessor.getAvailableEQBands().toString())
+            }
+
             override fun onDeviceVolumeChanged(volume: Int, muted: Boolean) {
                 Log.e("onDeviceVolumeChanged", volume.toString())
+                //TODO : emit DeviceStateModel
             }
+
 
             override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) {
                 Log.d("onPlaylistMetadataChanged", mediaMetadata.toString())
@@ -97,6 +107,10 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 Log.d("onIsPlayingChanged", isPlaying.toString())
 
+            }
+
+            override fun onRepeatModeChanged(repeatMode: Int) {
+                super.onRepeatModeChanged(repeatMode)
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -173,6 +187,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             }
 
         })
+
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -221,6 +236,10 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
                     val duration = (call.arguments as ArrayList<*>)[0] as Int ?: 5000
                     reverseTrack(duration)
                     result.success("Rewinded by $duration ms")
+                }
+
+                "setRepeatMode" -> {
+                    setRepeatMode((call.arguments as ArrayList<*>)[0] as Int)
                 }
 
                 else -> result.notImplemented()
@@ -305,6 +324,21 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
     override fun setVolume(volume: Float) {
         TODO("Not yet implemented")
+    }
+
+    override fun setRepeatMode(repeatMode: Int) {
+        if(player.isCommandAvailable(Player.COMMAND_SET_REPEAT_MODE))
+        {
+            if(repeatMode == Player.REPEAT_MODE_OFF || repeatMode == Player.REPEAT_MODE_ONE || repeatMode == Player.REPEAT_MODE_ALL)
+            {
+                player.repeatMode = repeatMode
+            }
+            else
+            {
+                // Throw Error
+            }
+        }
+
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)

@@ -12,6 +12,7 @@ interface HifiPluginPlayer {
     fun forwardTrack(duration : Int)
     fun reverseTrack(duration : Int)
     fun setVolume(volume : Float)
+    fun setRepeatMode(repeatMode : Int)
     suspend fun getMetadataWithoutPlayback(uri: String)
 
 }
