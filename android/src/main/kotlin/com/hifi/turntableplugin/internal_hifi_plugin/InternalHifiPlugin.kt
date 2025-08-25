@@ -2,9 +2,7 @@ package com.hifi.turntableplugin.internal_hifi_plugin
 
 import android.content.Context
 import android.media.MediaMetadataRetriever
-import android.media.audiofx.Equalizer
 import android.os.Build
-import android.os.Environment
 import android.provider.MediaStore
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
@@ -23,19 +21,16 @@ import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.embedding.engine.plugins.lifecycle.FlutterLifecycleAdapter
-import io.flutter.embedding.engine.plugins.lifecycle.HiddenLifecycleReference
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import java.io.IOException
 
 
@@ -44,6 +39,7 @@ import java.io.IOException
 class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer {
     private lateinit var positionTrackingChannel: EventChannel
     private lateinit var playStateChannel: EventChannel
+    private lateinit var metaDataChannel: EventChannel
     protected lateinit var player: ExoPlayer
     private fun positionTrackingFlow(): Flow<Long> = flow {
         while (true) {
@@ -59,7 +55,8 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
     private lateinit var context: Context
     private var eventsPositionTracking: EventChannel.EventSink? = null
-    private var eventsStateTracking: EventChannel.EventSink? = null
+    private var eventsPlayerState: EventChannel.EventSink? = null
+    private var eventsMetadata: EventChannel.EventSink? = null
     private lateinit var channel: MethodChannel
     private lateinit var audioProcessor: AudioProcessor
 
@@ -124,7 +121,14 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             flutterPluginBinding.binaryMessenger,
             PluginConstants.playStateEventChannel
         )
+
+        metaDataChannel =  EventChannel(
+            flutterPluginBinding.binaryMessenger,
+            PluginConstants.playStateEventChannel
+        )
+
         positionTrackingChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            // Emitted when the flutter side starts listening to this EventChannel
             override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
                 Log.d("TrackingChannel", "Setting Up EventChannel")
                 eventsPositionTracking = events
@@ -138,13 +142,26 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
         playStateChannel.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onCancel(arguments: Any?) {
                 Log.d("PlayStateChannel", "Cancelling EventChannel")
-                eventsStateTracking = null
+                eventsPlayerState = null
             }
 
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                 Log.d("playStateChannel", "Setting Up EventChannel")
-                eventsStateTracking = events
+                eventsPlayerState = events
             }
+        })
+
+        metaDataChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                Log.d("metaDataChannel", "Setting Up EventChannel")
+                eventsMetadata = events
+            }
+
+            override fun onCancel(arguments: Any?) {
+                Log.d("MetaDataChannel", "Cancelling EventChannel")
+                eventsMetadata = null
+            }
+
         })
     }
 
@@ -152,11 +169,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     override fun onMethodCall(call: MethodCall, result: Result) {
         try {
             if (call.method == "addSongToPlaylist") {
-//                addSongToPlaylist(
-//                    "file://" + Environment.getExternalStoragePublicDirectory(
-//                        Environment.DIRECTORY_DOWNLOADS
-//                    ) + "/04 Joy Spring.m4a"
-//                )
                 addSongToPlaylist((call.arguments as ArrayList<*>)[0].toString())
                 result.success("hifiPluginPlayer initialized")
             } else if (call.method == "playPlaylist") {
@@ -217,7 +229,10 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 //            eq.usePreset(2)
 //            Log.d("Equalizer ---", eq.numberOfPresets.toString())
 //            Log.d("Equalizer Current Preset ---", eq.currentPreset.toString())
-            player.prepare()
+            if(player.isCommandAvailable(Player.COMMAND_PREPARE))
+            {
+                player.prepare()
+            }
             player.play()
         }
     }

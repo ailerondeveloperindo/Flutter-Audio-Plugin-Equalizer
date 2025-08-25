@@ -9,11 +9,6 @@ class MethodChannelInternalHifiPlugin extends InternalHifiPluginPlatform {
   @visibleForTesting
   final methodChannel = const MethodChannel('internal_hifi_plugin');
 
-  @override
-  Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>('addSongToPlaylist');
-    return version;
-  }
 
   @override
   Future<String?> addToPlaylist(String uri) async {

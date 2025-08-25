@@ -20,7 +20,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-  String currentPosition = '0';
+  late String currentPosition;
   final EventChannel trackingPositionChannel = EventChannel(
     "internal_hifi_plugin_baseEventChannel/posTrackEventChannel",
   );
@@ -38,8 +38,8 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    currentPosition = formatPositionMStoMinuteFormat('0');
     trackingPositionChannel.receiveBroadcastStream().listen((dynamic event) {
-      print("CurrentPosition -> " + event.toString());
       setState(() {
         currentPosition = formatPositionMStoMinuteFormat(event.toString());
       });

@@ -23,9 +23,6 @@ abstract class InternalHifiPluginPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
-  }
 
   Future<String?> addToPlaylist(String uri) {
         throw UnimplementedError('addToPlaylist(String uri) has not been implemented.');
