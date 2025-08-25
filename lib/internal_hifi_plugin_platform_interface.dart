@@ -25,14 +25,34 @@ abstract class InternalHifiPluginPlatform extends PlatformInterface {
 
 
   Future<String?> addToPlaylist(String uri) {
-        throw UnimplementedError('addToPlaylist(String uri) has not been implemented.');
+    throw UnimplementedError('addToPlaylist(String uri) has not been implemented.');
   }
 
   Future<String?> playPlaylist() {
-        throw UnimplementedError('playPlaylist has not been implemented.');
+    throw UnimplementedError('playPlaylist has not been implemented.');
   }
 
-  Future<void> stopPlaylist(){
+  Future<void> stopPlaylist() {
     throw UnimplementedError('stopPlaylist has not been implemented.');
+  }
+
+  Future<void> pausePlaylist() {
+    throw UnimplementedError('pausePlaylist has not been implemented.');
+  }
+
+  Future<void> nextTrack() {
+    throw UnimplementedError('nextTrack has not been implemented.');
+  }
+
+  Future<void> previousTrack() {
+    throw UnimplementedError('previousTrack has not been implemented.');
+  }
+
+  Future<void> forwardTrack(int durationMs) {
+    throw UnimplementedError('forwardTrack has not been implemented.');
+  }
+
+  Future<void> reverseTrack(int durationMs) {
+    throw UnimplementedError('reverseTrack has not been implemented.');
   }
 }
