@@ -34,4 +34,8 @@ class InternalHifiPlugin {
   Future<void> reverseTrack(int durationMs) {
     return InternalHifiPluginPlatform.instance.reverseTrack(durationMs);
   }
+
+  Future<void> getBandLevels() {
+    return InternalHifiPluginPlatform.instance.getBandLevels();
+  }
 }

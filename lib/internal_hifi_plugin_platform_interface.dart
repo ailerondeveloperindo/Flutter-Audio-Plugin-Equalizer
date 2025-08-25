@@ -55,4 +55,11 @@ abstract class InternalHifiPluginPlatform extends PlatformInterface {
   Future<void> reverseTrack(int durationMs) {
     throw UnimplementedError('reverseTrack has not been implemented.');
   }
+
+  Future<void> getBandLevels() {
+    throw UnimplementedError('getBandLevels has not been implemented.');
+  }
+
+  Future<void> setBandLevels() {
+    throw UnimplementedError('setBandLevels has not been implemented.');
 }

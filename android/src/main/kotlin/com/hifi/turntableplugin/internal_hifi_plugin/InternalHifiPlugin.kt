@@ -18,12 +18,15 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.MetadataRetriever
+import com.hifi.turntableplugin.internal_hifi_plugin.models.BandLevelModel
+import com.hifi.turntableplugin.internal_hifi_plugin.models.BandLevels
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.embedding.engine.plugins.lifecycle.FlutterLifecycleAdapter
 import io.flutter.plugin.common.EventChannel
+import io.flutter.plugin.common.JSONUtil
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -33,6 +36,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.guava.await
 import kotlinx.coroutines.launch
+import kotlinx.serialization.json.Json
 import java.io.IOException
 
 
@@ -76,8 +80,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
                 // Player.STATE_IDLE, Player.STATE_BUFFERING, Player.STATE_READY, Player.STATE_ENDED
                 // Executes during playback state change
                 Log.d("onPlaylistMetadataChanged", playbackState.toString())
-                if(Player.STATE_READY == playbackState)
-                {
+                if (Player.STATE_READY == playbackState) {
                     Log.d("PlaybackState", "Ended, No Mediaitem on playlist")
                 }
             }
@@ -89,6 +92,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
                 audioProcessor = AudioProcessor(Equalizer(0, audioSessionId))
+                var a = audioProcessor.getBandDetails()
             }
 
             override fun onDeviceVolumeChanged(volume: Int, muted: Boolean) {
@@ -145,7 +149,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             PluginConstants.playStateEventChannel
         )
 
-        metaDataChannel =  EventChannel(
+        metaDataChannel = EventChannel(
             flutterPluginBinding.binaryMessenger,
             PluginConstants.playStateEventChannel
         )
@@ -237,6 +241,21 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
                     result.success("Rewinded by $duration ms")
                 }
 
+                "setBandLevel" -> {
+                    Log.d("setBandLevel methodCall", (call.arguments as ArrayList<*>)[0].toString())
+                    audioProcessor.setBandDetails(
+                        Json.decodeFromString(
+                            BandLevels.serializer(),
+                            (call.arguments as ArrayList<*>)[0].toString()
+                        )
+                    )
+                }
+
+                "getBandLevel" -> {
+                    Log.d("getBandLevel methodCall", Json.encodeToString(audioProcessor.getBandDetails()))
+                    result.success(Json.encodeToString(audioProcessor.getBandDetails()))
+                }
+
                 "setRepeatMode" -> {
                     setRepeatMode((call.arguments as ArrayList<*>)[0] as Int)
                 }
@@ -279,8 +298,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 //            eq.usePreset(2)
 //            Log.d("Equalizer ---", eq.numberOfPresets.toString())
 //            Log.d("Equalizer Current Preset ---", eq.currentPreset.toString())
-            if(player.isCommandAvailable(Player.COMMAND_PREPARE))
-            {
+            if (player.isCommandAvailable(Player.COMMAND_PREPARE)) {
                 player.prepare()
             }
             player.play()
@@ -326,14 +344,10 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     }
 
     override fun setRepeatMode(repeatMode: Int) {
-        if(player.isCommandAvailable(Player.COMMAND_SET_REPEAT_MODE))
-        {
-            if(repeatMode == Player.REPEAT_MODE_OFF || repeatMode == Player.REPEAT_MODE_ONE || repeatMode == Player.REPEAT_MODE_ALL)
-            {
+        if (player.isCommandAvailable(Player.COMMAND_SET_REPEAT_MODE)) {
+            if (repeatMode == Player.REPEAT_MODE_OFF || repeatMode == Player.REPEAT_MODE_ONE || repeatMode == Player.REPEAT_MODE_ALL) {
                 player.repeatMode = repeatMode
-            }
-            else
-            {
+            } else {
                 // Throw Error
             }
         }

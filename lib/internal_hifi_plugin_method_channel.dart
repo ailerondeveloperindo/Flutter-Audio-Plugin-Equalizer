@@ -55,4 +55,16 @@ class MethodChannelInternalHifiPlugin extends InternalHifiPluginPlatform {
     await methodChannel.invokeMethod<void>('reverseTrack', [durationMs]);
   }
   
+  @override
+  Future<void> getBandLevels() async {
+    // TODO: implement getBandLevels
+    await methodChannel.invokeMethod<void>('getBandLevel');
+  }
+
+  @override
+  Future<void> setBandLevels() async {
+    // TODO: implement setBandLevels
+    await methodChannel.invokeMethod<void>('setBandLevel');
+  }
+  
 }

@@ -44,6 +44,11 @@ class _MyAppState extends State<MyApp> {
         currentPosition = formatPositionMStoMinuteFormat(event.toString());
       });
     });
+    initPlatformState();
+  }
+
+  Future<void> initPlatformState() async {
+    return await _internalHifiPlugin.getBandLevels();
   }
 
   @override
