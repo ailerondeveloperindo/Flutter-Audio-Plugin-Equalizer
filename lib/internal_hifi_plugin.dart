@@ -11,7 +11,27 @@ class InternalHifiPlugin {
     return InternalHifiPluginPlatform.instance.playPlaylist();
   }
 
-    Future<void> stopPlaylist() {
+  Future<void> stopPlaylist() {
     return InternalHifiPluginPlatform.instance.stopPlaylist();
+  }
+
+    Future<void> pausePlaylist() {
+    return InternalHifiPluginPlatform.instance.pausePlaylist();
+  }
+
+  Future<void> nextTrack() {
+    return InternalHifiPluginPlatform.instance.nextTrack();
+  }
+
+  Future<void> previousTrack() {
+    return InternalHifiPluginPlatform.instance.previousTrack();
+  }
+
+  Future<void> forwardTrack(int durationMs) {
+    return InternalHifiPluginPlatform.instance.forwardTrack(durationMs);
+  }
+
+  Future<void> reverseTrack(int durationMs) {
+    return InternalHifiPluginPlatform.instance.reverseTrack(durationMs);
   }
 }
