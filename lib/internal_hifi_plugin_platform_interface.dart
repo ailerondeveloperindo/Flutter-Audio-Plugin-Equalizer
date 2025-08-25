@@ -1,5 +1,6 @@
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'band_level_model.dart';
 import 'internal_hifi_plugin_method_channel.dart';
 
 abstract class InternalHifiPluginPlatform extends PlatformInterface {
@@ -56,11 +57,11 @@ abstract class InternalHifiPluginPlatform extends PlatformInterface {
     throw UnimplementedError('reverseTrack has not been implemented.');
   }
 
-  Future<void> getBandLevels() {
+  Future<BandLevels> getBandLevels() {
     throw UnimplementedError('getBandLevels has not been implemented.');
   }
 
-  Future<void> setBandLevels() {
+  Future<void> setBandLevels(BandLevels bandLevels) {
     throw UnimplementedError('setBandLevels has not been implemented.');
 }
 

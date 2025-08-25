@@ -1,4 +1,5 @@
 
+import 'band_level_model.dart';
 import 'internal_hifi_plugin_platform_interface.dart';
 
 class InternalHifiPlugin {
@@ -35,7 +36,11 @@ class InternalHifiPlugin {
     return InternalHifiPluginPlatform.instance.reverseTrack(durationMs);
   }
 
-  Future<void> getBandLevels() {
+  Future<BandLevels> getBandLevels() {
     return InternalHifiPluginPlatform.instance.getBandLevels();
+  }
+
+  Future<void> setBandLevels(BandLevels bandLevels) {
+    return InternalHifiPluginPlatform.instance.setBandLevels(bandLevels);
   }
 }

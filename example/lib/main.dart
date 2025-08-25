@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import 'package:internal_hifi_plugin/band_level_model.dart';
 import 'package:internal_hifi_plugin/internal_hifi_plugin.dart';
 
 void main() {
@@ -21,6 +22,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   late String currentPosition;
+  late BandLevels? bandLevels = null;
   final EventChannel trackingPositionChannel = EventChannel(
     "internal_hifi_plugin_baseEventChannel/posTrackEventChannel",
   );
@@ -44,11 +46,33 @@ class _MyAppState extends State<MyApp> {
         currentPosition = formatPositionMStoMinuteFormat(event.toString());
       });
     });
-    initPlatformState();
   }
 
-  Future<void> initPlatformState() async {
-    return await _internalHifiPlugin.getBandLevels();
+  Widget generateBandLevelSliders() {
+    if (bandLevels?.bandLevels == null) {
+      return const Text("No Band Levels");
+    }
+    List<Widget> sliders = [];
+    for (var band in bandLevels!.bandLevels!) {
+      sliders.add(Column(
+        children: [
+          Text("Frequency: ${band.bandFrequency![1]/100} Hz"),
+          Slider(
+            value: band.bandLevel.toDouble()/100,
+            min: -12,
+            max: 12,
+            divisions: 24,
+            label: band.bandLevel.toString(),
+            onChanged: (double value) {
+              setState(() {
+                band.bandLevel = value.toInt();
+              });
+            },
+          ),
+        ],
+      ));
+    }
+    return Column(children: sliders);
   }
 
   @override
@@ -112,6 +136,17 @@ class _MyAppState extends State<MyApp> {
               },
               child: Text("Rewind 10s"),
             ),
+            ElevatedButton(
+              onPressed: () async {
+                BandLevels bands = await _internalHifiPlugin.getBandLevels();
+                setState(() {
+                  bandLevels = bands;
+                });
+                await _internalHifiPlugin.setBandLevels(bands);
+              },
+              child: Text("Set Band Levels"),
+            ),
+            generateBandLevelSliders()
           ],
         ),
       ),

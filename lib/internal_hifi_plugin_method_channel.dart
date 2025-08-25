@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
+import 'band_level_model.dart';
 import 'internal_hifi_plugin_platform_interface.dart';
 
 /// An implementation of [InternalHifiPluginPlatform] that uses method channels.
@@ -56,15 +59,16 @@ class MethodChannelInternalHifiPlugin extends InternalHifiPluginPlatform {
   }
   
   @override
-  Future<void> getBandLevels() async {
+  Future<BandLevels> getBandLevels() async {
     // TODO: implement getBandLevels
-    await methodChannel.invokeMethod<void>('getBandLevel');
+    return BandLevels.fromJson(jsonDecode(await methodChannel.invokeMethod<String>('getBandLevel') ?? "") as Map<String, dynamic>);
   }
 
   @override
-  Future<void> setBandLevels() async {
+  Future<void> setBandLevels(BandLevels bandLevels) async {
     // TODO: implement setBandLevels
-    await methodChannel.invokeMethod<void>('setBandLevel');
+    print("bandLevelsJson: ${bandLevels.toJson()}");
+    await methodChannel.invokeMethod<void>('setBandLevel', [jsonEncode( bandLevels.toJson())]);
   }
   
 }

@@ -12,6 +12,7 @@ class AudioProcessor(var eq: Equalizer)  {
         for (i in 0 until eq.numberOfBands)
         {
             var bandLevelModel = BandLevelModel()
+            bandLevelModel.bandLevelId = i.toShort()
             bandLevelModel.bandLevel = eq.getBandLevel(i.toShort()).toInt()
             bandLevelModel.bandFrequency = eq.getBandFreqRange(i.toShort())
             bandLevelList.add(bandLevelModel)

@@ -12,6 +12,7 @@ dependencies:
     sdk: flutter
   flutter_plugin_android_lifecycle: ^2.0.29
   plugin_platform_interface: ^2.0.2
+  json_annotation: ^4.9.0
 
 dev_dependencies:
   flutter_test:
