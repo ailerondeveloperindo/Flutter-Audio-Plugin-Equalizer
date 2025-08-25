@@ -15,6 +15,7 @@ import androidx.media3.common.Player
 //import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.MetadataRetriever
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin

@@ -69,13 +69,43 @@ class _MyAppState extends State<MyApp> {
               onPressed: () async {
                 await _internalHifiPlugin.playPlaylist();
               },
-              child: Text("Play Song"),
+              child: Text("Play Track"),
             ),
             ElevatedButton(
               onPressed: () async {
                 await _internalHifiPlugin.stopPlaylist();
               },
-              child: Text("Stop Song"),
+              child: Text("Stop Track"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await _internalHifiPlugin.stopPlaylist();
+              },
+              child: Text("Pause Playlist"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await _internalHifiPlugin.nextTrack();
+              },
+              child: Text("Next Track"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await _internalHifiPlugin.previousTrack();
+              },
+              child: Text("Previous Track"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await _internalHifiPlugin.forwardTrack(15000);
+              },
+              child: Text("Forward 10s"),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                await _internalHifiPlugin.reverseTrack(15000);
+              },
+              child: Text("Rewind 10s"),
             ),
           ],
         ),
