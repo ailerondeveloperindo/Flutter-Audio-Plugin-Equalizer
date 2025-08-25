@@ -168,30 +168,52 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onMethodCall(call: MethodCall, result: Result) {
         try {
-            if (call.method == "addSongToPlaylist") {
-                addSongToPlaylist((call.arguments as ArrayList<*>)[0].toString())
-                result.success("hifiPluginPlayer initialized")
-            } else if (call.method == "playPlaylist") {
-                playPlaylist()
-                result.success("Play Track")
-            } else if (call.method == "stopPlaylist") {
-                stopPlaylist()
-                result.success("Stop Track")
-            } else if(call.method == "skipSong") {
+            when (call.method) {
+                "addSongToPlaylist" -> {
+                    addSongToPlaylist((call.arguments as ArrayList<*>)[0].toString())
+                    result.success("Song added to playlist")
+                }
 
-            } else if(call.method == "pausePlaylist") {
+                "playPlaylist" -> {
+                    playPlaylist()
+                    result.success("Play Track")
+                }
 
-            }
-            else if(call.method == "nextTrack"){
+                "stopPlaylist" -> {
+                    stopPlaylist()
+                    result.success("Stop Track")
+                }
 
-            }
-            else if(call.method == "previousTrack") {
+                "pausePlaylist" -> {
+                    pausePlaylist()
+                    result.success("Pause Track")
+                }
 
-            } else if(call.method == "forwardTrack"){
+                "nextTrack" -> {
+                    nextTrack()
+                    result.success("Next Track")
+                }
 
-            } else if(call.method == "reverseTrack")
-            else {
-                result.notImplemented()
+                "previousTrack" -> {
+                    previousTrack()
+                    result.success("Previous Track")
+                }
+
+                "forwardTrack" -> {
+                    // expect argument in milliseconds
+                    val duration = (call.arguments as? Int) ?: 5000
+                    forwardTrack(duration)
+                    result.success("Forwarded by $duration ms")
+                }
+
+                "reverseTrack" -> {
+                    // expect argument in milliseconds
+                    val duration = (call.arguments as? Int) ?: 5000
+                    reverseTrack(duration)
+                    result.success("Rewinded by $duration ms")
+                }
+
+                else -> result.notImplemented()
             }
         } catch (e: Exception) {
             Log.e("HifiPluginPlayer Error", e.message.toString())
