@@ -250,23 +250,25 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     }
 
     override fun pausePlaylist() {
-        TODO("Not yet implemented")
+        if (player.isPlaying) {
+            player.stop()
+        }
     }
 
     override fun nextTrack() {
-        TODO("Not yet implemented")
+        player.seekToNextMediaItem()
     }
 
     override fun previousTrack() {
-        TODO("Not yet implemented")
+        player.seekToPreviousMediaItem()
     }
 
     override fun forwardTrack(duration: Int) {
-        TODO("Not yet implemented")
+        player.seekTo(player.currentPosition + duration)
     }
 
     override fun reverseTrack(duration: Int) {
-        TODO("Not yet implemented")
+        player.seekTo(player.currentPosition - duration)
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
