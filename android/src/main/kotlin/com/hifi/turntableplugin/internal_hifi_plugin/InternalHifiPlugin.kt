@@ -89,7 +89,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
                 audioProcessor = AudioProcessor(Equalizer(0, audioSessionId))
-                Log.d("Available Bands", audioProcessor.getAvailableEQBands().toString())
             }
 
             override fun onDeviceVolumeChanged(volume: Int, muted: Boolean) {
