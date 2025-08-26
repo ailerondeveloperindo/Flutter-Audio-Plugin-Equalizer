@@ -15,9 +15,11 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 //import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.MetadataRetriever
+import androidx.media3.exoplayer.upstream.DefaultAllocator
 import com.hifi.turntableplugin.internal_hifi_plugin.models.BandLevelModel
 import com.hifi.turntableplugin.internal_hifi_plugin.models.BandLevels
 import io.flutter.Log
@@ -73,7 +75,18 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "internal_hifi_plugin")
         channel.setMethodCallHandler(this)
         context = flutterPluginBinding.applicationContext
-        player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).build()
+        var loadControl: LoadControl = DefaultLoadControl.Builder()
+            .setAllocator(DefaultAllocator(true, 16))
+            .setBufferDurationsMs(
+                1_000, // minBufferMs
+                20_000, // maxBufferMs
+                500,  // bufferForPlaybackMs
+                1_000   // bufferForPlaybackAfterRebufferMs
+            )
+            .setTargetBufferBytes(-1) // Default
+            .setPrioritizeTimeOverSizeThresholds(true)
+            .build()
+        player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).setLoadControl(loadControl).build()
         player.addListener(object : Player.Listener {
 
             override fun onPlaybackStateChanged(playbackState: Int) {
@@ -118,6 +131,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
                 //TODO: Get Mediaitem MetaData
+                // This would be fired on mediaitem addition
                 Log.d("onMetaItemTransition", mediaItem.toString())
 
 
@@ -387,7 +401,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             lifecycle.coroutineScope.launch {
                 x.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     positionTrackingFlow().collect {
-                        Log.d("Current Position Tracked", it.toString())
                         eventsPositionTracking?.success(it)
                     }
                 }

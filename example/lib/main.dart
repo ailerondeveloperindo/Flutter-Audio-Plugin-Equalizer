@@ -12,6 +12,20 @@ void main() {
   runApp(const MyApp());
 }
 
+extension Double on double {
+  double toHz() {
+    return (this / 1000);
+  }
+
+  double toKhz() {
+    return (this / 1000000);
+  }
+
+  double toDbFromMilli() {
+    return (this / 1000);
+  }
+}
+
 class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
@@ -54,23 +68,25 @@ class _MyAppState extends State<MyApp> {
     }
     List<Widget> sliders = [];
     for (var band in bandLevels!.bandLevels!) {
-      sliders.add(Column(
-        children: [
-          Text("Frequency: ${band.bandFrequency![1]/100} Hz"),
-          Slider(
-            value: band.bandLevel.toDouble()/100,
-            min: -12,
-            max: 12,
-            divisions: 24,
-            label: band.bandLevel.toString(),
-            onChanged: (double value) {
-              setState(() {
-                band.bandLevel = value.toInt();
-              });
-            },
-          ),
-        ],
-      ));
+      sliders.add(
+        Row(
+          children: [
+            Text("${band.bandFrequency![1].toDouble().toKhz()} kHz"),
+            Slider(
+              value: band.bandLevel!.toDouble().toDbFromMilli(),
+              min: -12,
+              max: 12,
+              divisions: 4,
+              label: band.bandLevel.toString(),
+              onChanged: (double value) {
+                setState(() {
+                  band.bandLevel = value.toInt();
+                });
+              },
+            ),
+          ],
+        ),
+      );
     }
     return Column(children: sliders);
   }
@@ -85,11 +101,14 @@ class _MyAppState extends State<MyApp> {
             Text('Running on: $currentPosition\n'),
             ElevatedButton(
               onPressed: () async {
-                FilePickerResult? result = await FilePicker.platform.pickFiles(allowMultiple: true);
-                if(result != null)
-                {
-                    List<File> trackList = result.paths.map((path) => File(path!)).toList();
-                    await _internalHifiPlugin.addToPlaylist(trackList[0].path);
+                FilePickerResult? result = await FilePicker.platform.pickFiles(
+                  allowMultiple: true,
+                );
+                if (result != null) {
+                  List<File> trackList = result.paths
+                      .map((path) => File(path!))
+                      .toList();
+                  await _internalHifiPlugin.addToPlaylist(trackList[0].path);
                 }
               },
               child: Text("Add Track"),
@@ -146,7 +165,10 @@ class _MyAppState extends State<MyApp> {
               },
               child: Text("Set Band Levels"),
             ),
-            generateBandLevelSliders()
+            Container(
+              width: double.infinity,
+              child: Center(child: generateBandLevelSliders()),
+            ),
           ],
         ),
       ),
