@@ -4,6 +4,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class DeviceStateModel {
-    var volume : Int = 0
+    var volume : Float = 0f
     var isMuted: Boolean = false
 }

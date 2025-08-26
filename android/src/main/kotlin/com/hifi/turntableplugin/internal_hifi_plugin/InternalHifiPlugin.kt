@@ -12,7 +12,10 @@ import android.os.Build
 import android.provider.MediaStore
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
-import androidx.lifecycle.*
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.coroutineScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
@@ -68,6 +71,15 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     private lateinit var channel: MethodChannel
     private lateinit var audioProcessor: AudioProcessor
 
+    private fun getAudioVolume() : Float
+    {
+        val audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val currentVolume: Int = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
+        val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
+        val desiredValue = currentVolume / maxVolume.toFloat()
+        return desiredValue
+    }
+
     @kotlin.OptIn(ExperimentalCoroutinesApi::class)
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "internal_hifi_plugin")
@@ -84,8 +96,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             .setTargetBufferBytes(-1) // Default
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
-        val audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        val currentVolume: Int = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).setLoadControl(loadControl).build()
         player.addListener(object : Player.Listener {
 
@@ -108,13 +118,12 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
             }
 
-            override fun onDeviceVolumeChanged(volume: Int, muted: Boolean) {
-                Log.e("onDeviceVolumeChanged", volume.toString())
+            override fun onVolumeChanged(volume: Float) {
+                Log.d("onDeviceVolumeChanged", volume.toString())
                 val deviceStates = DeviceStateModel()
                 deviceStates.volume = volume
-                deviceStates.isMuted = muted
+                deviceStates.isMuted = player.isDeviceMuted
                 deviceState?.success(Json.encodeToString(deviceStates))
-                //TODO : emit DeviceStateModel
             }
 
 
@@ -218,8 +227,9 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                 Log.d("deviceChannel", "Setting Up EventChannel")
                 deviceState = events
+                player.volume = getAudioVolume()
                 val deviceStates = DeviceStateModel()
-                deviceStates.volume = player.volume.toInt()
+                deviceStates.volume = player.volume
                 deviceStates.isMuted = player.isDeviceMuted
                 deviceState?.success(Json.encodeToString(deviceStates))
                 Log.d("deviceState model", deviceStates.toString())
@@ -471,7 +481,9 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
     override fun onReceive(context: Context?, intent: Intent?) {
         if(intent != null) {
-
+            if(intent.action == "android.media.VOLUME_CHANGED_ACTION") {
+                player.volume = getAudioVolume()
+            }
         }
     }
 }
