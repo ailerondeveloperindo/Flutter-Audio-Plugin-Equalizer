@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -7,6 +8,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:internal_hifi_plugin/band_level_model.dart';
 import 'package:internal_hifi_plugin/internal_hifi_plugin.dart';
+import 'package:internal_hifi_plugin/models/device_state_model.dart';
 
 void main() {
   runApp(const MyApp());
@@ -37,7 +39,7 @@ class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   late String currentPosition;
   late BandLevels? bandLevels = null;
-
+  late DeviceStateModel? deviceState = null;
 
   final _internalHifiPlugin = InternalHifiPlugin();
 
@@ -67,7 +69,9 @@ class _MyAppState extends State<MyApp> {
       });
     });
     deviceStateChannel.receiveBroadcastStream().listen((dynamic event) {
-      // Handle device state changes if needed
+      setState(() {
+        deviceState = DeviceStateModel.fromJson(jsonDecode(event) as Map<String, dynamic>);
+      });
     });
   }
 
@@ -178,6 +182,7 @@ class _MyAppState extends State<MyApp> {
               width: double.infinity,
               child: Center(child: generateBandLevelSliders()),
             ),
+            Text("Volume: ${deviceState != null ? deviceState?.volume.toString() : "Volume not available"}"),
           ],
         ),
       ),

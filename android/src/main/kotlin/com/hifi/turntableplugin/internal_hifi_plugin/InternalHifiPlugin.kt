@@ -1,6 +1,11 @@
 package com.hifi.turntableplugin.internal_hifi_plugin
 
+//import androidx.media3.common.Player
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.media.AudioManager
 import android.media.MediaMetadataRetriever
 import android.media.audiofx.Equalizer
 import android.os.Build
@@ -8,27 +13,21 @@ import android.provider.MediaStore
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.*
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import androidx.media3.common.Metadata
-import androidx.media3.common.PlaybackException
-import androidx.media3.common.Player
-//import androidx.media3.common.Player
+import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.MetadataRetriever
 import androidx.media3.exoplayer.upstream.DefaultAllocator
-import com.hifi.turntableplugin.internal_hifi_plugin.models.BandLevelModel
 import com.hifi.turntableplugin.internal_hifi_plugin.models.BandLevels
+import com.hifi.turntableplugin.internal_hifi_plugin.models.DeviceStateModel
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.embedding.engine.plugins.lifecycle.FlutterLifecycleAdapter
 import io.flutter.plugin.common.EventChannel
-import io.flutter.plugin.common.JSONUtil
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -44,7 +43,7 @@ import java.io.IOException
 //TODO: Null handling
 /** InternalHifiPlugin */
 @OptIn(UnstableApi::class)
-class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer {
+class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer, BroadcastReceiver() {
     private lateinit var positionTrackingChannel: EventChannel
     private lateinit var playStateChannel: EventChannel
     private lateinit var metaDataChannel: EventChannel
@@ -69,7 +68,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     private lateinit var channel: MethodChannel
     private lateinit var audioProcessor: AudioProcessor
 
-
     @kotlin.OptIn(ExperimentalCoroutinesApi::class)
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "internal_hifi_plugin")
@@ -86,6 +84,8 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             .setTargetBufferBytes(-1) // Default
             .setPrioritizeTimeOverSizeThresholds(true)
             .build()
+        val audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        val currentVolume: Int = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).setLoadControl(loadControl).build()
         player.addListener(object : Player.Listener {
 
@@ -93,7 +93,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
                 // Player.STATE_IDLE, Player.STATE_BUFFERING, Player.STATE_READY, Player.STATE_ENDED
                 // Executes during playback state change
                 Log.d("onPlaylistMetadataChanged", playbackState.toString())
-                deviceState?.success(playbackState)
                 if (Player.STATE_READY == playbackState) {
                     Log.d("PlaybackState", "Ended, No Mediaitem on playlist")
                 }
@@ -106,11 +105,15 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
                 audioProcessor = AudioProcessor(Equalizer(0, audioSessionId))
-                var a = audioProcessor.getBandDetails()
+
             }
 
             override fun onDeviceVolumeChanged(volume: Int, muted: Boolean) {
                 Log.e("onDeviceVolumeChanged", volume.toString())
+                val deviceStates = DeviceStateModel()
+                deviceStates.volume = volume
+                deviceStates.isMuted = muted
+                deviceState?.success(Json.encodeToString(deviceStates))
                 //TODO : emit DeviceStateModel
             }
 
@@ -215,6 +218,11 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                 Log.d("deviceChannel", "Setting Up EventChannel")
                 deviceState = events
+                val deviceStates = DeviceStateModel()
+                deviceStates.volume = player.volume.toInt()
+                deviceStates.isMuted = player.isDeviceMuted
+                deviceState?.success(Json.encodeToString(deviceStates))
+                Log.d("deviceState model", deviceStates.toString())
             }
 
             override fun onCancel(arguments: Any?) {
@@ -414,7 +422,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        var lifecycle = FlutterLifecycleAdapter.getActivityLifecycle(binding)
+        val lifecycle = FlutterLifecycleAdapter.getActivityLifecycle(binding)
         //TODO: HifiPlugin should derive from LifecycleObserver class
         lifecycle.addObserver(LifecycleEventObserver { x, _ ->
             lifecycle.coroutineScope.launch {
@@ -438,6 +446,13 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
             }
         })
+
+        lifecycle.addObserver(LifecycleEventObserver { x, _ ->
+            if(x.lifecycle.currentState == Lifecycle.State.CREATED) {
+                val filter: IntentFilter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
+                context.registerReceiver(this,filter)
+            }
+        })
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
@@ -449,6 +464,14 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     }
 
     override fun onDetachedFromActivity() {
+        // TODO: unregister observers and broadcastReceivers
+        context.unregisterReceiver(this)
         TODO("Not yet implemented")
+    }
+
+    override fun onReceive(context: Context?, intent: Intent?) {
+        if(intent != null) {
+
+        }
     }
 }
