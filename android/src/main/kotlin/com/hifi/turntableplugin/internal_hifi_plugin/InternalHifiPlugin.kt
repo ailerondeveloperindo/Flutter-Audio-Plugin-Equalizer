@@ -25,6 +25,7 @@ import androidx.media3.exoplayer.MetadataRetriever
 import androidx.media3.exoplayer.upstream.DefaultAllocator
 import com.hifi.turntableplugin.internal_hifi_plugin.models.BandLevels
 import com.hifi.turntableplugin.internal_hifi_plugin.models.DeviceStateModel
+import com.hifi.turntableplugin.internal_hifi_plugin.models.SongMetadataModel
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
@@ -52,6 +53,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     private lateinit var metaDataChannel: EventChannel
     private lateinit var deviceChannel: EventChannel
     protected lateinit var player: ExoPlayer
+    private lateinit var lifecycle: Lifecycle
     private fun positionTrackingFlow(): Flow<Long> = flow {
         while (true) {
             if (player.isPlaying) {
@@ -129,6 +131,14 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
             override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) {
                 Log.d("onPlaylistMetadataChanged", mediaMetadata.toString())
+                val metadataModel = SongMetadataModel()
+                metadataModel.songAlbum = if (!mediaMetadata.albumTitle.isNullOrBlank()) mediaMetadata.albumTitle.toString() else ""
+                metadataModel.songArtist = if (!mediaMetadata.albumArtist.isNullOrBlank()) mediaMetadata.albumArtist.toString() else ""
+                metadataModel.songTitle = mediaMetadata.title.toString()
+                metadataModel.songDurationMs = mediaMetadata.durationMs.toString()
+                metadataModel.songAlbumCoverBase64 = mediaMetadata.artworkData.toString()
+                metadataModel.songAuthor = mediaMetadata.composer.toString()
+                eventsMetadata?.success(Json.encodeToString(SongMetadataModel()))
 
             }
 
@@ -432,7 +442,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     }
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
-        val lifecycle = FlutterLifecycleAdapter.getActivityLifecycle(binding)
+        lifecycle = FlutterLifecycleAdapter.getActivityLifecycle(binding)
         //TODO: HifiPlugin should derive from LifecycleObserver class
         lifecycle.addObserver(LifecycleEventObserver { x, _ ->
             lifecycle.coroutineScope.launch {
