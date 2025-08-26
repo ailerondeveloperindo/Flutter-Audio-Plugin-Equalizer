@@ -37,10 +37,16 @@ class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   late String currentPosition;
   late BandLevels? bandLevels = null;
-  final EventChannel trackingPositionChannel = EventChannel(
-    "internal_hifi_plugin_baseEventChannel/posTrackEventChannel",
-  );
+
+
   final _internalHifiPlugin = InternalHifiPlugin();
+
+    final EventChannel trackingPositionChannel = EventChannel(
+    InternalHifiPlugin.constants.posTrackEventChannel,
+  );
+  final EventChannel deviceStateChannel = EventChannel(
+    InternalHifiPlugin.constants.deviceStateEventChannel,
+  );
 
   String formatPositionMStoMinuteFormat(String t) {
     var dt = Duration(milliseconds: int.parse(t));
@@ -59,6 +65,9 @@ class _MyAppState extends State<MyApp> {
       setState(() {
         currentPosition = formatPositionMStoMinuteFormat(event.toString());
       });
+    });
+    deviceStateChannel.receiveBroadcastStream().listen((dynamic event) {
+      // Handle device state changes if needed
     });
   }
 

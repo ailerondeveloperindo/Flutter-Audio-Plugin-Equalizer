@@ -1,8 +1,12 @@
 
+import 'package:internal_hifi_plugin/plugin_constants.dart';
+
 import 'band_level_model.dart';
 import 'internal_hifi_plugin_platform_interface.dart';
 
 class InternalHifiPlugin {
+
+  static PluginConstants constants = PluginConstants();
 
   Future<String?> addToPlaylist(String uri) {
     return InternalHifiPluginPlatform.instance.addToPlaylist(uri);

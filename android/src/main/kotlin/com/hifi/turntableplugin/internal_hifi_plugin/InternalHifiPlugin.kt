@@ -41,13 +41,14 @@ import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.IOException
 
-
+//TODO: Null handling
 /** InternalHifiPlugin */
 @OptIn(UnstableApi::class)
 class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer {
     private lateinit var positionTrackingChannel: EventChannel
     private lateinit var playStateChannel: EventChannel
     private lateinit var metaDataChannel: EventChannel
+    private lateinit var deviceChannel: EventChannel
     protected lateinit var player: ExoPlayer
     private fun positionTrackingFlow(): Flow<Long> = flow {
         while (true) {
@@ -58,7 +59,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             kotlinx.coroutines.delay(1000)
 
         }
-
     }
 
     private lateinit var context: Context
@@ -93,6 +93,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
                 // Player.STATE_IDLE, Player.STATE_BUFFERING, Player.STATE_READY, Player.STATE_ENDED
                 // Executes during playback state change
                 Log.d("onPlaylistMetadataChanged", playbackState.toString())
+                deviceState?.success(playbackState)
                 if (Player.STATE_READY == playbackState) {
                     Log.d("PlaybackState", "Ended, No Mediaitem on playlist")
                 }
@@ -168,6 +169,11 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             PluginConstants.playStateEventChannel
         )
 
+        deviceChannel = EventChannel(
+            flutterPluginBinding.binaryMessenger,
+            PluginConstants.deviceStateEventChannel
+        )
+
         positionTrackingChannel.setStreamHandler(object : EventChannel.StreamHandler {
             // Emitted when the flutter side starts listening to this EventChannel
             override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
@@ -201,6 +207,19 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             override fun onCancel(arguments: Any?) {
                 Log.d("MetaDataChannel", "Cancelling EventChannel")
                 eventsMetadata = null
+            }
+
+        })
+
+        deviceChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                Log.d("deviceChannel", "Setting Up EventChannel")
+                deviceState = events
+            }
+
+            override fun onCancel(arguments: Any?) {
+                Log.d("deviceChannel", "Cancelling EventChannel")
+                deviceState = null
             }
 
         })
