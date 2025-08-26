@@ -1,5 +1,5 @@
 
-import 'package:internal_hifi_plugin/plugin_constants.dart';
+import 'plugin_constants.dart';
 
 import 'band_level_model.dart';
 import 'models/device_state_model.dart';
