@@ -20,7 +20,6 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
-import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.MetadataRetriever
@@ -161,12 +160,29 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
                 Log.d("onMediaMetadataChanged", mediaMetadata.toString())
                 // This will be fired on mediaitem change
                 val metadataModel = SongMetadataModel()
-                metadataModel.songAlbum = if (!mediaMetadata.albumTitle.isNullOrBlank()) mediaMetadata.albumTitle.toString() else ""
-                metadataModel.songArtist = if (!mediaMetadata.albumArtist.isNullOrBlank()) mediaMetadata.albumArtist.toString() else ""
-                metadataModel.songTitle = if(mediaMetadata.title.isNullOrBlank()) mediaMetadata.title.toString() else ""
-                metadataModel.songDurationMs = if(mediaMetadata.durationMs != null) mediaMetadata.durationMs!! else 0
-                metadataModel.songAlbumCoverBase64 = if(mediaMetadata.artworkData != null) Base64.encodeToString(mediaMetadata.artworkData,Base64.DEFAULT) else ""
-                metadataModel.songAuthor = if(mediaMetadata.composer.isNullOrBlank()) mediaMetadata.composer.toString() else ""
+                metadataModel.title = mediaMetadata.title?.toString()
+                metadataModel.artist = mediaMetadata.artist?.toString()
+                metadataModel.album = mediaMetadata.albumTitle?.toString()
+                metadataModel.recordingYear = mediaMetadata.recordingYear
+                metadataModel.recordingMonth = mediaMetadata.recordingMonth
+                metadataModel.recordingDay = mediaMetadata.recordingDay
+                metadataModel.releaseYear = mediaMetadata.releaseYear
+                metadataModel.releaseMonth = mediaMetadata.releaseMonth
+                metadataModel.releaseDay = mediaMetadata.releaseDay
+                metadataModel.writer = mediaMetadata.writer?.toString()
+                metadataModel.discNumber = mediaMetadata.discNumber
+                metadataModel.totalDiscCount = mediaMetadata.totalDiscCount
+                metadataModel.genre = mediaMetadata.genre?.toString()
+                metadataModel.compilation = mediaMetadata.compilation?.toString()
+                metadataModel.station = mediaMetadata.station?.toString()
+                metadataModel.durationMs = mediaMetadata.durationMs ?: 0
+                metadataModel.composer = mediaMetadata.composer?.toString()
+                metadataModel.conductor = mediaMetadata.conductor?.toString()
+                metadataModel.albumArtworkBase64 = if (mediaMetadata.artworkData != null) Base64.encodeToString(mediaMetadata.artworkData, Base64.DEFAULT) else null
+                metadataModel.artworkDataType = mediaMetadata.artworkDataType
+                metadataModel.artworkUri = mediaMetadata.artworkUri?.toString()
+                metadataModel.trackNumber = mediaMetadata.trackNumber
+                metadataModel.totalTrackCount = mediaMetadata.totalTrackCount
                 eventsMetadata?.success(Json.encodeToString(metadataModel))
             }
 
