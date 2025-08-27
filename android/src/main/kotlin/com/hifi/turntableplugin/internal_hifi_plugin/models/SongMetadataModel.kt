@@ -2,6 +2,7 @@ package com.hifi.turntableplugin.internal_hifi_plugin.models
 
 import kotlinx.serialization.Serializable
 
+@Serializable
 class AlbumArtworkModel {
     var songAlbumCoverBase64: String? = null
     var artworkDataType: String? = null
@@ -12,7 +13,7 @@ class SongMetadataModel {
     var songTitle: String? = null
     var songArtist: String? = null
     var songAlbum: String? = null
-    var songDurationMs: String? = null
+    var songDurationMs: Long = 0
     var songSize: String? = null
     var songAuthor: String? = null
     var songAlbumCoverBase64: String? = null

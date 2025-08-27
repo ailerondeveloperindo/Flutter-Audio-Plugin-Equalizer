@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:internal_hifi_plugin/band_level_model.dart';
 import 'package:internal_hifi_plugin/internal_hifi_plugin.dart';
 import 'package:internal_hifi_plugin/models/device_state_model.dart';
+import 'package:internal_hifi_plugin/models/metadata_model.dart';
 
 void main() {
   runApp(const MyApp());
@@ -40,15 +41,12 @@ class _MyAppState extends State<MyApp> {
   late String currentPosition;
   late BandLevels? bandLevels = null;
   late DeviceStateModel? deviceState = null;
+  late SongMetadataModel? currentlyPlayingMetaData = null;
 
-  final _internalHifiPlugin = InternalHifiPlugin();
+  final _hifiInstance = InternalHifiPlugin();
 
-    final EventChannel trackingPositionChannel = EventChannel(
-    InternalHifiPlugin.constants.posTrackEventChannel,
-  );
-  final EventChannel deviceStateChannel = EventChannel(
-    InternalHifiPlugin.constants.deviceStateEventChannel,
-  );
+
+
 
   String formatPositionMStoMinuteFormat(String t) {
     var dt = Duration(milliseconds: int.parse(t));
@@ -63,15 +61,22 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     currentPosition = formatPositionMStoMinuteFormat('0');
-    trackingPositionChannel.receiveBroadcastStream().listen((dynamic event) {
+    //TODO: Need even less EventChannels. Probably we can wrap several values in one channel.
+    _hifiInstance.trackingPositionChannel.receiveBroadcastStream().listen((dynamic event) {
       setState(() {
         currentPosition = formatPositionMStoMinuteFormat(event.toString());
       });
     });
-    deviceStateChannel.receiveBroadcastStream().listen((dynamic event) {
+    _hifiInstance.deviceStateChannel.receiveBroadcastStream().listen((dynamic event) {
       setState(() {
         deviceState = DeviceStateModel.fromJson(jsonDecode(event) as Map<String, dynamic>);
       });
+    });
+    _hifiInstance.metaDataChannel.receiveBroadcastStream().listen((dynamic event) {
+      print("Metadata event: $event");
+      // setState(() {
+      //   // Handle metadata updates if needed
+      // });
     });
   }
 
@@ -121,60 +126,60 @@ class _MyAppState extends State<MyApp> {
                   List<File> trackList = result.paths
                       .map((path) => File(path!))
                       .toList();
-                  await _internalHifiPlugin.addToPlaylist(trackList[0].path);
+                  await _hifiInstance.addToPlaylist(trackList[0].path);
                 }
               },
               child: Text("Add Track"),
             ),
             ElevatedButton(
               onPressed: () async {
-                await _internalHifiPlugin.playPlaylist();
+                await _hifiInstance.playPlaylist();
               },
               child: Text("Play Track"),
             ),
             ElevatedButton(
               onPressed: () async {
-                await _internalHifiPlugin.stopPlaylist();
+                await _hifiInstance.stopPlaylist();
               },
               child: Text("Stop Track"),
             ),
             ElevatedButton(
               onPressed: () async {
-                await _internalHifiPlugin.stopPlaylist();
+                await _hifiInstance.stopPlaylist();
               },
               child: Text("Pause Playlist"),
             ),
             ElevatedButton(
               onPressed: () async {
-                await _internalHifiPlugin.nextTrack();
+                await _hifiInstance.nextTrack();
               },
               child: Text("Next Track"),
             ),
             ElevatedButton(
               onPressed: () async {
-                await _internalHifiPlugin.previousTrack();
+                await _hifiInstance.previousTrack();
               },
               child: Text("Previous Track"),
             ),
             ElevatedButton(
               onPressed: () async {
-                await _internalHifiPlugin.forwardTrack(15000);
+                await _hifiInstance.forwardTrack(15000);
               },
               child: Text("Forward 10s"),
             ),
             ElevatedButton(
               onPressed: () async {
-                await _internalHifiPlugin.reverseTrack(15000);
+                await _hifiInstance.reverseTrack(15000);
               },
               child: Text("Rewind 10s"),
             ),
             ElevatedButton(
               onPressed: () async {
-                BandLevels bands = await _internalHifiPlugin.getBandLevels();
+                BandLevels bands = await _hifiInstance.getBandLevels();
                 setState(() {
                   bandLevels = bands;
                 });
-                await _internalHifiPlugin.setBandLevels(bands);
+                await _hifiInstance.setBandLevels(bands);
               },
               child: Text("Set Band Levels"),
             ),

@@ -10,6 +10,7 @@ import android.media.MediaMetadataRetriever
 import android.media.audiofx.Equalizer
 import android.os.Build
 import android.provider.MediaStore
+import android.util.Base64
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.Lifecycle
@@ -19,6 +20,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
+import androidx.media3.exoplayer.ExoPlaybackException
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.LoadControl
 import androidx.media3.exoplayer.MetadataRetriever
@@ -131,14 +133,8 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
             override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) {
                 Log.d("onPlaylistMetadataChanged", mediaMetadata.toString())
-                val metadataModel = SongMetadataModel()
-                metadataModel.songAlbum = if (!mediaMetadata.albumTitle.isNullOrBlank()) mediaMetadata.albumTitle.toString() else ""
-                metadataModel.songArtist = if (!mediaMetadata.albumArtist.isNullOrBlank()) mediaMetadata.albumArtist.toString() else ""
-                metadataModel.songTitle = mediaMetadata.title.toString()
-                metadataModel.songDurationMs = mediaMetadata.durationMs.toString()
-                metadataModel.songAlbumCoverBase64 = mediaMetadata.artworkData.toString()
-                metadataModel.songAuthor = mediaMetadata.composer.toString()
-                eventsMetadata?.success(Json.encodeToString(SongMetadataModel()))
+                //TODO: Extract this into separate method
+
 
             }
 
@@ -153,15 +149,25 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                //TODO: Get Mediaitem MetaData
-                // This would be fired on mediaitem addition
+                //TODO: Fetch all metaDatas from MediaItems
+                // This will be fired on mediaitem addition
                 Log.d("onMetaItemTransition", mediaItem.toString())
+
 
 
             }
 
             override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
                 Log.d("onMediaMetadataChanged", mediaMetadata.toString())
+                // This will be fired on mediaitem change
+                val metadataModel = SongMetadataModel()
+                metadataModel.songAlbum = if (!mediaMetadata.albumTitle.isNullOrBlank()) mediaMetadata.albumTitle.toString() else ""
+                metadataModel.songArtist = if (!mediaMetadata.albumArtist.isNullOrBlank()) mediaMetadata.albumArtist.toString() else ""
+                metadataModel.songTitle = if(mediaMetadata.title.isNullOrBlank()) mediaMetadata.title.toString() else ""
+                metadataModel.songDurationMs = if(mediaMetadata.durationMs != null) mediaMetadata.durationMs!! else 0
+                metadataModel.songAlbumCoverBase64 = if(mediaMetadata.artworkData != null) Base64.encodeToString(mediaMetadata.artworkData,Base64.DEFAULT) else ""
+                metadataModel.songAuthor = if(mediaMetadata.composer.isNullOrBlank()) mediaMetadata.composer.toString() else ""
+                eventsMetadata?.success(Json.encodeToString(metadataModel))
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -188,7 +194,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
         metaDataChannel = EventChannel(
             flutterPluginBinding.binaryMessenger,
-            PluginConstants.playStateEventChannel
+            PluginConstants.metadataEventChannel
         )
 
         deviceChannel = EventChannel(

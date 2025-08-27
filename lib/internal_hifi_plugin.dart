@@ -1,13 +1,29 @@
 
+import 'package:flutter/services.dart';
+
 import 'plugin_constants.dart';
 
 import 'band_level_model.dart';
 import 'models/device_state_model.dart';
+import 'models/metadata_model.dart';
 import 'internal_hifi_plugin_platform_interface.dart';
 
 class InternalHifiPlugin {
 
   static PluginConstants constants = PluginConstants();
+  EventChannel deviceStateChannel = EventChannel(
+    constants.deviceStateEventChannel,
+  );
+  
+
+  EventChannel metaDataChannel = EventChannel(
+    InternalHifiPlugin.constants.metadataEventChannel,
+  );
+  
+  EventChannel trackingPositionChannel = EventChannel(
+    InternalHifiPlugin.constants.posTrackEventChannel,
+  );
+
 
   Future<String?> addToPlaylist(String uri) {
     return InternalHifiPluginPlatform.instance.addToPlaylist(uri);
