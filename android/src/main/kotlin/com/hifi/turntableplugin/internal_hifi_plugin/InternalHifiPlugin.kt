@@ -48,7 +48,7 @@ import java.io.IOException
 //TODO: Null handling
 /** InternalHifiPlugin */
 @OptIn(UnstableApi::class)
-class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, HifiPluginPlayer, BroadcastReceiver() {
+class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, BroadcastReceiver() {
     private lateinit var positionTrackingChannel: EventChannel
     private lateinit var playStateChannel: EventChannel
     private lateinit var metaDataChannel: EventChannel
@@ -74,8 +74,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     private lateinit var channel: MethodChannel
     private lateinit var audioProcessor: AudioProcessor
 
-    private fun getAudioVolume() : Float
-    {
+    private fun getAudioVolume(): Float {
         val audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
         val currentVolume: Int = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
         val maxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)
@@ -153,37 +152,12 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
                 Log.d("onMetaItemTransition", mediaItem.toString())
 
 
-
             }
 
             override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
                 Log.d("onMediaMetadataChanged", mediaMetadata.toString())
                 // This will be fired on mediaitem change
-                val metadataModel = SongMetadataModel()
-                metadataModel.title = mediaMetadata.title?.toString()
-                metadataModel.artist = mediaMetadata.artist?.toString()
-                metadataModel.album = mediaMetadata.albumTitle?.toString()
-                metadataModel.recordingYear = mediaMetadata.recordingYear
-                metadataModel.recordingMonth = mediaMetadata.recordingMonth
-                metadataModel.recordingDay = mediaMetadata.recordingDay
-                metadataModel.releaseYear = mediaMetadata.releaseYear
-                metadataModel.releaseMonth = mediaMetadata.releaseMonth
-                metadataModel.releaseDay = mediaMetadata.releaseDay
-                metadataModel.writer = mediaMetadata.writer?.toString()
-                metadataModel.discNumber = mediaMetadata.discNumber
-                metadataModel.totalDiscCount = mediaMetadata.totalDiscCount
-                metadataModel.genre = mediaMetadata.genre?.toString()
-                metadataModel.compilation = mediaMetadata.compilation?.toString()
-                metadataModel.station = mediaMetadata.station?.toString()
-                metadataModel.durationMs = mediaMetadata.durationMs ?: 0
-                metadataModel.composer = mediaMetadata.composer?.toString()
-                metadataModel.conductor = mediaMetadata.conductor?.toString()
-                metadataModel.albumArtworkBase64 = if (mediaMetadata.artworkData != null) Base64.encodeToString(mediaMetadata.artworkData, Base64.DEFAULT) else null
-                metadataModel.artworkDataType = mediaMetadata.artworkDataType
-                metadataModel.artworkUri = mediaMetadata.artworkUri?.toString()
-                metadataModel.trackNumber = mediaMetadata.trackNumber
-                metadataModel.totalTrackCount = mediaMetadata.totalTrackCount
-                eventsMetadata?.success(Json.encodeToString(metadataModel))
+                eventsMetadata?.success(Json.encodeToString(PluginUtils.MetaDataUtils.createMetaDataModels(mediaMetadata)))
             }
 
             override fun onPlayerError(error: PlaybackException) {
@@ -357,7 +331,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     }
 
 
-    override fun addSongToPlaylist(uri: String) {
+    fun addSongToPlaylist(uri: String) {
         val mediaItem = MediaItem.fromUri(uri)
         // TODO: Check for duplicate songs
         // TODO: Check if url invalid
@@ -375,7 +349,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
-    override fun playPlaylist() {
+    fun playPlaylist() {
         if (!player.isPlaying) {
 //            eq = Equalizer(0, player.audioSessionId)
 //            eq.usePreset(2)
@@ -389,7 +363,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     }
 
 
-    override fun stopPlaylist() {
+    fun stopPlaylist() {
         try {
             if (player.isPlaying) {
                 player.stop()
@@ -400,33 +374,33 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
     }
 
-    override fun pausePlaylist() {
+    fun pausePlaylist() {
         if (player.isPlaying) {
             player.stop()
         }
     }
 
-    override fun nextTrack() {
+    fun nextTrack() {
         player.seekToNextMediaItem()
     }
 
-    override fun previousTrack() {
+    fun previousTrack() {
         player.seekToPreviousMediaItem()
     }
 
-    override fun forwardTrack(duration: Int) {
+    fun forwardTrack(duration: Int) {
         player.seekTo(player.currentPosition + duration)
     }
 
-    override fun reverseTrack(duration: Int) {
+    fun reverseTrack(duration: Int) {
         player.seekTo(player.currentPosition - duration)
     }
 
-    override fun setVolume(volume: Float) {
+    fun setVolume(volume: Float) {
         TODO("Not yet implemented")
     }
 
-    override fun setRepeatMode(repeatMode: Int) {
+    fun setRepeatMode(repeatMode: Int) {
         if (player.isCommandAvailable(Player.COMMAND_SET_REPEAT_MODE)) {
             if (repeatMode == Player.REPEAT_MODE_OFF || repeatMode == Player.REPEAT_MODE_ONE || repeatMode == Player.REPEAT_MODE_ALL) {
                 player.repeatMode = repeatMode
@@ -439,7 +413,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
 
     @RequiresApi(Build.VERSION_CODES.Q)
     @OptIn(UnstableApi::class)
-    override suspend fun getMetadataWithoutPlayback(uri: String) {
+    suspend fun getMetadataWithoutPlayback(uri: String) {
         @OptIn(UnstableApi::class)
         fun handleMetadata(trackGroupArray: String) {
             println("tes123" + trackGroupArray)
@@ -490,9 +464,9 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
         })
 
         lifecycle.addObserver(LifecycleEventObserver { x, _ ->
-            if(x.lifecycle.currentState == Lifecycle.State.CREATED) {
+            if (x.lifecycle.currentState == Lifecycle.State.CREATED) {
                 val filter: IntentFilter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
-                context.registerReceiver(this,filter)
+                context.registerReceiver(this, filter)
             }
         })
     }
@@ -512,8 +486,8 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Hifi
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {
-        if(intent != null) {
-            if(intent.action == "android.media.VOLUME_CHANGED_ACTION") {
+        if (intent != null) {
+            if (intent.action == "android.media.VOLUME_CHANGED_ACTION") {
                 player.volume = getAudioVolume()
             }
         }

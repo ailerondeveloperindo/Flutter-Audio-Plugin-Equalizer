@@ -25,6 +25,7 @@ class SongMetadataModel {
     var discNumber: Int? = null
     var totalDiscCount: Int? = null
     var genre: String? = null
+    var style: String? = null
     var compilation: String? = null
     var station: String? = null
     var durationMs: Long = 0
