@@ -456,7 +456,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
             lifecycle.coroutineScope.launch {
                 x.repeatOnLifecycle(Lifecycle.State.RESUMED) {
                     if (!player.isPlaying) {
-                        eventsPositionTracking?.success(player.currentPosition)
+                        eventsPositionTracking?.success(Json.encodeToString(PositionStateModel()))
 
                     }
                 }
