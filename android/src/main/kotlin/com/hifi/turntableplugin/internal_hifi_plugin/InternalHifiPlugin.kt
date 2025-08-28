@@ -26,6 +26,7 @@ import androidx.media3.exoplayer.MetadataRetriever
 import androidx.media3.exoplayer.upstream.DefaultAllocator
 import com.hifi.turntableplugin.internal_hifi_plugin.models.BandLevels
 import com.hifi.turntableplugin.internal_hifi_plugin.models.DeviceStateModel
+import com.hifi.turntableplugin.internal_hifi_plugin.models.PositionStateModel
 import com.hifi.turntableplugin.internal_hifi_plugin.models.SongMetadataModel
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -55,10 +56,10 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     private lateinit var deviceChannel: EventChannel
     protected lateinit var player: ExoPlayer
     private lateinit var lifecycle: Lifecycle
-    private fun positionTrackingFlow(): Flow<Long> = flow {
+    private fun positionTrackingFlow(): Flow<PositionStateModel?> = flow {
         while (true) {
             if (player.isPlaying) {
-                emit(player.currentPosition)
+                emit(player.mediaMetadata.durationMs?.let { PositionStateModel(position = player.currentPosition.toInt(), durationMs = it.toInt()) })
 
             }
             kotlinx.coroutines.delay(1000)
@@ -444,7 +445,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
             lifecycle.coroutineScope.launch {
                 x.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     positionTrackingFlow().collect {
-                        eventsPositionTracking?.success(it)
+                        eventsPositionTracking?.success(Json.encodeToString(it))
                     }
                 }
 
