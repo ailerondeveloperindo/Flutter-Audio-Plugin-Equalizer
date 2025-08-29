@@ -68,7 +68,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
                 emit(PositionStateModel(position = player.currentPosition.toInt(), durationMs = trackDuration))
 
             }
-            kotlinx.coroutines.delay(1000)
+            kotlinx.coroutines.delay(500)
 
         }
     }
