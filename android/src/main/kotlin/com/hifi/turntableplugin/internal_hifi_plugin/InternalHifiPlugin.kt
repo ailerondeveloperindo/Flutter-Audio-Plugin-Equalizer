@@ -59,7 +59,13 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     private fun positionTrackingFlow(): Flow<PositionStateModel?> = flow {
         while (true) {
             if (player.isPlaying) {
-                emit(player.mediaMetadata.durationMs?.let { PositionStateModel(position = player.currentPosition.toInt(), durationMs = it.toInt()) })
+                var trackDuration = 0
+                if(player.duration != null)
+                {
+                    trackDuration = player.duration.toInt()
+                }
+//                Log.d("InternalHifiPlugin", "Track Duration: $trackDuration")
+                emit(PositionStateModel(position = player.currentPosition.toInt(), durationMs = trackDuration))
 
             }
             kotlinx.coroutines.delay(1000)
@@ -157,6 +163,16 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
 
             override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
                 Log.d("onMediaMetadataChanged", mediaMetadata.toString())
+                lifecycle.addObserver(LifecycleEventObserver { x, _ ->
+                    lifecycle.coroutineScope.launch {
+                        x.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                            positionTrackingFlow().collect {
+                                eventsPositionTracking?.success(Json.encodeToString(it))
+                            }
+                        }
+
+                    }
+                })
                 // This will be fired on mediaitem change
                 eventsMetadata?.success(Json.encodeToString(PluginUtils.MetaDataUtils.createMetaDataModels(mediaMetadata)))
             }
@@ -441,28 +457,18 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         lifecycle = FlutterLifecycleAdapter.getActivityLifecycle(binding)
         //TODO: HifiPlugin should derive from LifecycleObserver class
-        lifecycle.addObserver(LifecycleEventObserver { x, _ ->
-            lifecycle.coroutineScope.launch {
-                x.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                    positionTrackingFlow().collect {
-                        eventsPositionTracking?.success(Json.encodeToString(it))
-                    }
-                }
 
-            }
-        })
-
-        lifecycle.addObserver(LifecycleEventObserver { x, _ ->
-            lifecycle.coroutineScope.launch {
-                x.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-                    if (!player.isPlaying) {
-                        eventsPositionTracking?.success(Json.encodeToString(PositionStateModel()))
-
-                    }
-                }
-
-            }
-        })
+//        lifecycle.addObserver(LifecycleEventObserver { x, _ ->
+//            lifecycle.coroutineScope.launch {
+//                x.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+//                    if (!player.isPlaying) {
+//                        eventsPositionTracking?.success(Json.encodeToString(PositionStateModel(position = 0,po)))
+//
+//                    }
+//                }
+//
+//            }
+//        })
 
         lifecycle.addObserver(LifecycleEventObserver { x, _ ->
             if (x.lifecycle.currentState == Lifecycle.State.CREATED) {
