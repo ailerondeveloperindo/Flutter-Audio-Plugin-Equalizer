@@ -116,8 +116,11 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
                 // Player.STATE_IDLE, Player.STATE_BUFFERING, Player.STATE_READY, Player.STATE_ENDED
                 // Executes during playback state change
                 Log.d("onPlaylistMetadataChanged", playbackState.toString())
-                if (Player.STATE_READY == playbackState) {
+                if (playbackState == Player.STATE_READY) {
                     Log.d("PlaybackState", "Ended, No Mediaitem on playlist")
+                }
+                else if(playbackState == Player.STATE_ENDED){
+                    player.seekTo(0,0)
                 }
             }
 
