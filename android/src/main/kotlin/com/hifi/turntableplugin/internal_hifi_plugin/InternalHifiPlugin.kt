@@ -390,9 +390,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
 //            eq.usePreset(2)
 //            Log.d("Equalizer ---", eq.numberOfPresets.toString())
 //            Log.d("Equalizer Current Preset ---", eq.currentPreset.toString())
-            if (player.isCommandAvailable(Player.COMMAND_PREPARE)) {
-                player.prepare()
-            }
+            player.prepare()
             player.play()
         }
     }
