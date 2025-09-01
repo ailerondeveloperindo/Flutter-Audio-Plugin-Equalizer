@@ -59,13 +59,8 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     private fun positionTrackingFlow(): Flow<PositionStateModel?> = flow {
         while (true) {
             if (player.isPlaying) {
-                var trackDuration = 0
-                if(player.duration != null)
-                {
-                    trackDuration = player.duration.toInt()
-                }
-//                Log.d("InternalHifiPlugin", "Track Duration: $trackDuration")
-                emit(PositionStateModel(position = player.currentPosition.toInt(), durationMs = trackDuration))
+
+                emit(PositionStateModel(position = player.currentPosition.toInt(), durationMs = getTrackDuration()))
 
             }
             kotlinx.coroutines.delay(500)
@@ -80,6 +75,15 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     private var deviceState: EventChannel.EventSink? = null
     private lateinit var channel: MethodChannel
     private lateinit var audioProcessor: AudioProcessor
+
+    private fun getTrackDuration(): Int{
+        var trackDuration = 0
+        if(player.duration != null)
+        {
+            trackDuration = player.duration.toInt()
+        }
+        return trackDuration
+    }
 
     private fun getAudioVolume(): Float {
         val audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -187,6 +191,20 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
                 // TODO: Retrieve album cover, title, etc
                 Log.d("onMetadata", metadata.toString())
 
+            }
+
+            override fun onPositionDiscontinuity(
+                oldPosition: Player.PositionInfo,
+                newPosition: Player.PositionInfo,
+                reason: Int
+            ) {
+                if(reason == Player.DISCONTINUITY_REASON_SEEK)
+                {
+                    if(!player.isPlaying){
+                        var currentPositionModel = PositionStateModel(position = player.currentPosition.toInt(), durationMs = getTrackDuration())
+                        eventsPositionTracking?.success(Json.encodeToString(currentPositionModel))
+                    }
+                }
             }
         })
 
