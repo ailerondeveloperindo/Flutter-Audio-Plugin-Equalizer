@@ -54,6 +54,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     private lateinit var playStateChannel: EventChannel
     private lateinit var metaDataChannel: EventChannel
     private lateinit var deviceChannel: EventChannel
+    protected var players: List<ExoPlayer> = emptyList()
     protected lateinit var player: ExoPlayer
     private lateinit var lifecycle: Lifecycle
     private fun positionTrackingFlow(): Flow<PositionStateModel?> = flow {
@@ -296,6 +297,10 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     override fun onMethodCall(call: MethodCall, result: Result) {
         try {
             when (call.method) {
+                "init" ->{
+
+                }
+
                 "addSongToPlaylist" -> {
                     addSongToPlaylist((call.arguments as ArrayList<*>)[0].toString())
                     result.success("Song added to playlist")
