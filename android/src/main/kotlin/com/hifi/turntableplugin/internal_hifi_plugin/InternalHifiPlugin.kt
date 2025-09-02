@@ -328,7 +328,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
 
                 "seekTo" -> {
                     // expect argument in milliseconds
-                    val duration = (call.arguments as ArrayList<*>)[0] as Long ?: 5000
+                    val duration = (call.arguments as ArrayList<*>)[0] as Int ?: 5000
                     seekTo(duration)
                     result.success("Seeked To by $duration ms")
                 }
@@ -423,7 +423,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     }
 
 
-    private fun seekTo(duration: Long) {
+    private fun seekTo(duration: Int) {
         player.seekTo(player.currentPosition + duration)
     }
 
