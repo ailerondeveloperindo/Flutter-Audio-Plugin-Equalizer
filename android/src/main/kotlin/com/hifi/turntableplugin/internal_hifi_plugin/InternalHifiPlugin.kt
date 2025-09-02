@@ -120,6 +120,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
                     Log.d("PlaybackState", "Ended, No Mediaitem on playlist")
                 }
                 else if(playbackState == Player.STATE_ENDED){
+                    player.playWhenReady = false
                     player.seekTo(0,0)
                 }
             }
