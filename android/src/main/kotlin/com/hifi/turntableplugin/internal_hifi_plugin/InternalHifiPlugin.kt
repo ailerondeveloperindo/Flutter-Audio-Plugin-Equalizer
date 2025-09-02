@@ -120,8 +120,11 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
                     Log.d("PlaybackState", "Ended, No Mediaitem on playlist")
                 }
                 else if(playbackState == Player.STATE_ENDED){
-                    player.playWhenReady = false
-                    player.seekTo(0,0)
+                    if(player.repeatMode == Player.REPEAT_MODE_OFF){
+                        player.playWhenReady = false
+                        player.seekTo(0,0)
+                    }
+
                 }
             }
 
@@ -400,7 +403,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     }
 
 
-    fun stopPlaylist() {
+    private fun stopPlaylist() {
         try {
             if (player.isPlaying) {
                 player.stop()
@@ -411,25 +414,25 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
 
     }
 
-    fun pausePlaylist() {
+    private fun pausePlaylist() {
         if (player.isPlaying) {
             player.stop()
         }
     }
 
-    fun nextTrack() {
+    private fun nextTrack() {
         player.seekToNextMediaItem()
     }
 
-    fun previousTrack() {
+    private fun previousTrack() {
         player.seekToPreviousMediaItem()
     }
 
-    fun forwardTrack(duration: Int) {
+    private fun forwardTrack(duration: Int) {
         player.seekTo(player.currentPosition + duration)
     }
 
-    fun reverseTrack(duration: Int) {
+    private fun reverseTrack(duration: Int) {
         player.seekTo(player.currentPosition - duration)
     }
 
@@ -437,7 +440,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
         TODO("Not yet implemented")
     }
 
-    fun setRepeatMode(repeatMode: Int) {
+    private fun setRepeatMode(repeatMode: Int) {
         if (player.isCommandAvailable(Player.COMMAND_SET_REPEAT_MODE)) {
             if (repeatMode == Player.REPEAT_MODE_OFF || repeatMode == Player.REPEAT_MODE_ONE || repeatMode == Player.REPEAT_MODE_ALL) {
                 player.repeatMode = repeatMode
