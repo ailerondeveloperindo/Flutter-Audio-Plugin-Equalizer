@@ -424,7 +424,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
 
 
     private fun seekTo(duration: Long) {
-        player.seekTo(duration)
+        player.seekTo(player.currentPosition + duration)
     }
 
     fun setVolume(volume: Float) {
