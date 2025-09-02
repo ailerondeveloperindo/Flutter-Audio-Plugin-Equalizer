@@ -47,16 +47,11 @@ class MethodChannelInternalHifiPlugin extends InternalHifiPluginPlatform {
   }
 
   @override
-  Future<void> forwardTrack(int durationMs) async {
+  Future<void> seekTo(int durationMs) async {
     // Pass duration inside array
-    await methodChannel.invokeMethod<void>('forwardTrack', [durationMs]);
+    await methodChannel.invokeMethod<void>('seekTo', [durationMs]);
   }
 
-  @override
-  Future<void> reverseTrack(int durationMs) async {
-    // Pass duration inside array
-    await methodChannel.invokeMethod<void>('reverseTrack', [durationMs]);
-  }
   
   @override
   Future<BandLevels> getBandLevels() async {

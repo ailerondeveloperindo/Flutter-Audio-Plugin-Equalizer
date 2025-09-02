@@ -49,13 +49,10 @@ class InternalHifiPlugin {
     return InternalHifiPluginPlatform.instance.previousTrack();
   }
 
-  Future<void> forwardTrack(int durationMs) {
-    return InternalHifiPluginPlatform.instance.forwardTrack(durationMs);
+  Future<void> seekTo(int durationMs) {
+    return InternalHifiPluginPlatform.instance.seekTo(durationMs);
   }
 
-  Future<void> reverseTrack(int durationMs) {
-    return InternalHifiPluginPlatform.instance.reverseTrack(durationMs);
-  }
 
   Future<BandLevels> getBandLevels() {
     return InternalHifiPluginPlatform.instance.getBandLevels();

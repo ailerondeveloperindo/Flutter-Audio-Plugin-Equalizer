@@ -326,19 +326,13 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
                     result.success("Previous Track")
                 }
 
-                "forwardTrack" -> {
+                "seekTo" -> {
                     // expect argument in milliseconds
-                    val duration = (call.arguments as ArrayList<*>)[0] as Int ?: 5000
-                    forwardTrack(duration)
-                    result.success("Forwarded by $duration ms")
+                    val duration = (call.arguments as ArrayList<*>)[0] as Long ?: 5000
+                    seekTo(duration)
+                    result.success("Seeked To by $duration ms")
                 }
 
-                "reverseTrack" -> {
-                    // expect argument in milliseconds
-                    val duration = (call.arguments as ArrayList<*>)[0] as Int ?: 5000
-                    reverseTrack(duration)
-                    result.success("Rewinded by $duration ms")
-                }
 
                 "setBandLevel" -> {
                     Log.d("setBandLevel methodCall", (call.arguments as ArrayList<*>)[0].toString())
@@ -428,12 +422,9 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
         player.seekToPreviousMediaItem()
     }
 
-    private fun forwardTrack(duration: Int) {
-        player.seekTo(player.currentPosition + duration)
-    }
 
-    private fun reverseTrack(duration: Int) {
-        player.seekTo(player.currentPosition - duration)
+    private fun seekTo(duration: Long) {
+        player.seekTo(duration)
     }
 
     fun setVolume(volume: Float) {
