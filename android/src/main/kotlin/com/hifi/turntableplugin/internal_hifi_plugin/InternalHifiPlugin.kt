@@ -135,7 +135,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
             }
 
             override fun onAudioSessionIdChanged(audioSessionId: Int) {
-                audioProcessor = AudioProcessor(Equalizer(0, audioSessionId))
+//                audioProcessor = AudioProcessor(Equalizer(0, audioSessionId))
 
             }
 
