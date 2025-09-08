@@ -52,6 +52,10 @@ class MethodChannelInternalHifiPlugin extends InternalHifiPluginPlatform {
     await methodChannel.invokeMethod<void>('seekTo', [durationMs]);
   }
 
+  @override
+  Future<void> init() async {
+        await methodChannel.invokeMethod<void>('init');
+  }
   
   @override
   Future<BandLevels> getBandLevels() async {

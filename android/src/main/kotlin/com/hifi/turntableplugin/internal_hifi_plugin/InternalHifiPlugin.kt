@@ -7,16 +7,12 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioManager
 import android.media.MediaMetadataRetriever
-import android.media.audiofx.Equalizer
 import android.os.Build
 import android.provider.MediaStore
-import android.util.Base64
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.coroutineScope
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.*
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
@@ -26,10 +22,9 @@ import androidx.media3.exoplayer.MetadataRetriever
 import androidx.media3.exoplayer.upstream.DefaultAllocator
 import com.hifi.turntableplugin.internal_hifi_plugin.models.BandLevels
 import com.hifi.turntableplugin.internal_hifi_plugin.models.DeviceStateModel
-import com.hifi.turntableplugin.internal_hifi_plugin.models.PositionStateModel
-import com.hifi.turntableplugin.internal_hifi_plugin.models.SongMetadataModel
 import io.flutter.Log
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterPluginBinding
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.embedding.engine.plugins.lifecycle.FlutterLifecycleAdapter
@@ -39,35 +34,21 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.guava.await
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import java.io.IOException
 
-//TODO: Null handling
-/** InternalHifiPlugin */
+
 @OptIn(UnstableApi::class)
 class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, BroadcastReceiver() {
     private lateinit var positionTrackingChannel: EventChannel
     private lateinit var playStateChannel: EventChannel
     private lateinit var metaDataChannel: EventChannel
     private lateinit var deviceChannel: EventChannel
-    protected var players: List<ExoPlayer> = emptyList()
-    protected lateinit var player: ExoPlayer
+    protected var players: List<ExoPlayer> = emptyList() //TODO: Generate Player object through factory
+    private var player: ExoPlayer? = null
     private lateinit var lifecycle: Lifecycle
-    private fun positionTrackingFlow(): Flow<PositionStateModel?> = flow {
-        while (true) {
-            if (player.isPlaying) {
 
-                emit(PositionStateModel(position = player.currentPosition.toInt(), durationMs = getTrackDuration()))
-
-            }
-            kotlinx.coroutines.delay(500)
-
-        }
-    }
 
     private lateinit var context: Context
     private var eventsPositionTracking: EventChannel.EventSink? = null
@@ -76,15 +57,8 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     private var deviceState: EventChannel.EventSink? = null
     private lateinit var channel: MethodChannel
     private lateinit var audioProcessor: AudioProcessor
+    private lateinit var binding: FlutterPluginBinding
 
-    private fun getTrackDuration(): Int{
-        var trackDuration = 0
-        if(player.duration != null)
-        {
-            trackDuration = player.duration.toInt()
-        }
-        return trackDuration
-    }
 
     private fun getAudioVolume(): Float {
         val audioManager: AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
@@ -94,128 +68,26 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
         return desiredValue
     }
 
+    private fun initializePlayer(loadControl: LoadControl, binding: FlutterPlugin.FlutterPluginBinding): ExoPlayer {
+        var player: ExoPlayer
+        player = ExoPlayer.Builder(binding.applicationContext).setLoadControl(loadControl).build()
+        player.addListener(
+            PluginPlayerListener(
+                player = player,
+                lifecycle = lifecycle,
+                onListenVolumeChange = { deviceStateJson -> deviceState?.success(deviceStateJson) },
+                onListenPositionChange = { positionStateJson -> eventsPositionTracking?.success(positionStateJson) },
+                onListenMediaMetadataChange = { mediaMetadata -> eventsMetadata?.success(mediaMetadata)})
+        )
+        return player;
+    }
+
     @kotlin.OptIn(ExperimentalCoroutinesApi::class)
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "internal_hifi_plugin")
         channel.setMethodCallHandler(this)
         context = flutterPluginBinding.applicationContext
-        var loadControl: LoadControl = DefaultLoadControl.Builder()
-            .setAllocator(DefaultAllocator(true, 16))
-            .setBufferDurationsMs(
-                1_000, // minBufferMs
-                20_000, // maxBufferMs
-                500,  // bufferForPlaybackMs
-                1_000   // bufferForPlaybackAfterRebufferMs
-            )
-            .setTargetBufferBytes(-1) // Default
-            .setPrioritizeTimeOverSizeThresholds(true)
-            .build()
-        player = ExoPlayer.Builder(flutterPluginBinding.applicationContext).setLoadControl(loadControl).build()
-        player.addListener(object : Player.Listener {
-
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                // Player.STATE_IDLE, Player.STATE_BUFFERING, Player.STATE_READY, Player.STATE_ENDED
-                // Executes during playback state change
-                Log.d("onPlaylistMetadataChanged", playbackState.toString())
-                if (playbackState == Player.STATE_READY) {
-                    Log.d("PlaybackState", "Ended, No Mediaitem on playlist")
-                }
-                else if(playbackState == Player.STATE_ENDED){
-                    if(player.repeatMode == Player.REPEAT_MODE_OFF){
-                        player.playWhenReady = false
-                        player.seekTo(0,0)
-                    }
-
-                }
-            }
-
-            override fun onPlayerErrorChanged(error: PlaybackException?) {
-                Log.e("onPlayerErrorChanged", error.toString())
-
-            }
-
-            override fun onAudioSessionIdChanged(audioSessionId: Int) {
-//                audioProcessor = AudioProcessor(Equalizer(0, audioSessionId))
-
-            }
-
-            override fun onVolumeChanged(volume: Float) {
-                Log.d("onDeviceVolumeChanged", volume.toString())
-                val deviceStates = DeviceStateModel()
-                deviceStates.volume = volume
-                deviceStates.isMuted = player.isDeviceMuted
-                deviceState?.success(Json.encodeToString(deviceStates))
-            }
-
-
-            override fun onPlaylistMetadataChanged(mediaMetadata: MediaMetadata) {
-                Log.d("onPlaylistMetadataChanged", mediaMetadata.toString())
-                //TODO: Extract this into separate method
-
-
-            }
-
-            /* Called when track is either in play or stop state */
-            override fun onIsPlayingChanged(isPlaying: Boolean) {
-                Log.d("onIsPlayingChanged", isPlaying.toString())
-
-            }
-
-            override fun onRepeatModeChanged(repeatMode: Int) {
-                super.onRepeatModeChanged(repeatMode)
-            }
-
-            override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
-                //TODO: Fetch all metaDatas from MediaItems
-                // This will be fired on mediaitem addition
-                Log.d("onMetaItemTransition", mediaItem.toString())
-
-
-            }
-
-            override fun onMediaMetadataChanged(mediaMetadata: MediaMetadata) {
-                Log.d("onMediaMetadataChanged", mediaMetadata.toString())
-                lifecycle.addObserver(LifecycleEventObserver { x, _ ->
-                    lifecycle.coroutineScope.launch {
-                        x.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                            positionTrackingFlow().collect {
-                                eventsPositionTracking?.success(Json.encodeToString(it))
-                            }
-                        }
-
-                    }
-                })
-                // This will be fired on mediaitem change
-                eventsMetadata?.success(Json.encodeToString(PluginUtils.MetaDataUtils.createMetaDataModels(mediaMetadata)))
-            }
-
-            override fun onPlayerError(error: PlaybackException) {
-                // TODO: Send error to flutter
-                Log.e("onPlayerError", error.toString())
-
-            }
-
-            override fun onMetadata(metadata: Metadata) {
-                // TODO: Retrieve album cover, title, etc
-                Log.d("onMetadata", metadata.toString())
-
-            }
-
-            override fun onPositionDiscontinuity(
-                oldPosition: Player.PositionInfo,
-                newPosition: Player.PositionInfo,
-                reason: Int
-            ) {
-                if(reason == Player.DISCONTINUITY_REASON_SEEK)
-                {
-                    if(!player.isPlaying){
-                        var currentPositionModel = PositionStateModel(position = player.currentPosition.toInt(), durationMs = getTrackDuration())
-                        eventsPositionTracking?.success(Json.encodeToString(currentPositionModel))
-                    }
-                }
-            }
-        })
-
+        binding = flutterPluginBinding
         positionTrackingChannel = EventChannel(
             flutterPluginBinding.binaryMessenger,
             PluginConstants.posTrackEventChannel
@@ -275,13 +147,15 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
         deviceChannel.setStreamHandler(object : EventChannel.StreamHandler {
             override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                 Log.d("deviceChannel", "Setting Up EventChannel")
-                deviceState = events
-                player.volume = getAudioVolume()
-                val deviceStates = DeviceStateModel()
-                deviceStates.volume = player.volume
-                deviceStates.isMuted = player.isDeviceMuted
-                deviceState?.success(Json.encodeToString(deviceStates))
-                Log.d("deviceState model", deviceStates.toString())
+                if (player != null) {
+                    deviceState = events
+                    player!!.volume = getAudioVolume()
+                    val deviceStates = DeviceStateModel()
+                    deviceStates.volume = player!!.volume
+                    deviceStates.isMuted = player!!.isDeviceMuted
+                    deviceState?.success(Json.encodeToString(deviceStates))
+                    Log.d("deviceState model", deviceStates.toString())
+                }
             }
 
             override fun onCancel(arguments: Any?) {
@@ -297,8 +171,19 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     override fun onMethodCall(call: MethodCall, result: Result) {
         try {
             when (call.method) {
-                "init" ->{
-
+                "init" -> {
+                    var loadControl: LoadControl = DefaultLoadControl.Builder()
+                        .setAllocator(DefaultAllocator(true, 16))
+                        .setBufferDurationsMs(
+                            1_000, // minBufferMs
+                            20_000, // maxBufferMs
+                            500,  // bufferForPlaybackMs
+                            1_000   // bufferForPlaybackAfterRebufferMs
+                        )
+                        .setTargetBufferBytes(-1) // Default
+                        .setPrioritizeTimeOverSizeThresholds(true)
+                        .build()
+                    player = initializePlayer(loadControl, binding);
                 }
 
                 "addSongToPlaylist" -> {
@@ -386,26 +271,26 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
 //                }
 //            }
 //        }
-        player.addMediaItem(mediaItem)
+        player!!.addMediaItem(mediaItem)
     }
 
     @RequiresApi(Build.VERSION_CODES.Q)
     fun playPlaylist() {
-        if (!player.isPlaying) {
+        if (!player!!.isPlaying) {
 //            eq = Equalizer(0, player.audioSessionId)
 //            eq.usePreset(2)
 //            Log.d("Equalizer ---", eq.numberOfPresets.toString())
 //            Log.d("Equalizer Current Preset ---", eq.currentPreset.toString())
-            player.prepare()
-            player.play()
+            player!!.prepare()
+            player!!.play()
         }
     }
 
 
     private fun stopPlaylist() {
         try {
-            if (player.isPlaying) {
-                player.stop()
+            if (player!!.isPlaying) {
+                player!!.stop()
             }
         } catch (e: Exception) {
             Log.e("HifiPluginPlayer Error", e.message.toString())
@@ -414,22 +299,22 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     }
 
     private fun pausePlaylist() {
-        if (player.isPlaying) {
-            player.stop()
+        if (player!!.isPlaying) {
+            player!!.stop()
         }
     }
 
     private fun nextTrack() {
-        player.seekToNextMediaItem()
+        player!!.seekToNextMediaItem()
     }
 
     private fun previousTrack() {
-        player.seekToPreviousMediaItem()
+        player!!.seekToPreviousMediaItem()
     }
 
 
     private fun seekTo(duration: Int) {
-        player.seekTo(duration.toLong())
+        player!!.seekTo(duration.toLong())
     }
 
     fun setVolume(volume: Float) {
@@ -437,9 +322,9 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     }
 
     private fun setRepeatMode(repeatMode: Int) {
-        if (player.isCommandAvailable(Player.COMMAND_SET_REPEAT_MODE)) {
+        if (player!!.isCommandAvailable(Player.COMMAND_SET_REPEAT_MODE)) {
             if (repeatMode == Player.REPEAT_MODE_OFF || repeatMode == Player.REPEAT_MODE_ONE || repeatMode == Player.REPEAT_MODE_ALL) {
-                player.repeatMode = repeatMode
+                player!!.repeatMode = repeatMode
             } else {
                 // Throw Error
             }
@@ -514,7 +399,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     override fun onReceive(context: Context?, intent: Intent?) {
         if (intent != null) {
             if (intent.action == "android.media.VOLUME_CHANGED_ACTION") {
-                player.volume = getAudioVolume()
+                player!!.volume = getAudioVolume()
             }
         }
     }

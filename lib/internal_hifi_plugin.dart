@@ -61,4 +61,9 @@ class InternalHifiPlugin {
   Future<void> setBandLevels(BandLevels bandLevels) {
     return InternalHifiPluginPlatform.instance.setBandLevels(bandLevels);
   }
+
+    @override
+  Future<void> init() async {
+    return InternalHifiPluginPlatform.instance.init();
+  }
 }

@@ -61,4 +61,8 @@ abstract class InternalHifiPluginPlatform extends PlatformInterface {
     throw UnimplementedError('setBandLevels has not been implemented.');
 }
 
+  Future<void> init() {
+    throw UnimplementedError('init has not been implemented.');
+}
+
 }

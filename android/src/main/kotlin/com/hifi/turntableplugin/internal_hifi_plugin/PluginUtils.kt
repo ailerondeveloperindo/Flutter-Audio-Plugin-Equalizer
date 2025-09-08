@@ -2,6 +2,7 @@ package com.hifi.turntableplugin.internal_hifi_plugin
 
 import android.util.Base64
 import androidx.media3.common.MediaMetadata
+import androidx.media3.exoplayer.ExoPlayer
 import com.hifi.turntableplugin.internal_hifi_plugin.models.SongMetadataModel
 
 class PluginUtils {
@@ -33,6 +34,14 @@ class PluginUtils {
             metadataModel.trackNumber = mediaMetadata.trackNumber
             metadataModel.totalTrackCount = mediaMetadata.totalTrackCount
             return metadataModel
+        }
+
+        fun getTrackDuration(player: ExoPlayer): Int {
+            var trackDuration = 0
+            if (player.duration != null) {
+                trackDuration = player.duration.toInt()
+            }
+            return trackDuration
         }
     }
 }
