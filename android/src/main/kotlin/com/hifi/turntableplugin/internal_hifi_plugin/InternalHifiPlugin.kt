@@ -182,6 +182,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
                         .setTargetBufferBytes(-1) // Default
                         .setPrioritizeTimeOverSizeThresholds(true)
                         .build()
+                    // TODO: Push initialized player object to list and return instance id (Managing MultiInstance)
                     player = initializePlayer(loadControl, binding);
                 }
 
