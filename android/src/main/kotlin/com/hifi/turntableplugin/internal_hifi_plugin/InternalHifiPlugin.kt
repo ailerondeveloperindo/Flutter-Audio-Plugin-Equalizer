@@ -70,14 +70,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
 
     private fun initializePlayer(loadControl: LoadControl, binding: FlutterPluginBinding): ExoPlayer {
         var player: ExoPlayer = ExoPlayer.Builder(binding.applicationContext).setLoadControl(loadControl).build()
-        player.addListener(
-            PluginPlayerListener(
-                player = player,
-                lifecycle = lifecycle,
-                onListenVolumeChange = { deviceStateJson -> deviceState?.success(deviceStateJson) },
-                onListenPositionChange = { positionStateJson -> eventsPositionTracking?.success(positionStateJson) },
-                onListenMediaMetadataChange = { mediaMetadata -> eventsMetadata?.success(mediaMetadata)})
-        )
         return player;
     }
 
@@ -184,6 +176,14 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
                         .build()
                     // TODO: Push initialized player object to list and return instance id (Managing MultiInstance)
                     player = initializePlayer(loadControl, binding);
+                    player!!.addListener(
+                        PluginPlayerListener(
+                            player = player!!,
+                            lifecycle = lifecycle,
+                            onListenVolumeChange = { deviceStateJson -> deviceState?.success(deviceStateJson) },
+                            onListenPositionChange = { positionStateJson -> eventsPositionTracking?.success(positionStateJson) },
+                            onListenMediaMetadataChange = { mediaMetadata -> eventsMetadata?.success(mediaMetadata)})
+                    )
                 }
 
                 "addSongToPlaylist" -> {
