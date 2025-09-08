@@ -68,9 +68,8 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
         return desiredValue
     }
 
-    private fun initializePlayer(loadControl: LoadControl, binding: FlutterPlugin.FlutterPluginBinding): ExoPlayer {
-        var player: ExoPlayer
-        player = ExoPlayer.Builder(binding.applicationContext).setLoadControl(loadControl).build()
+    private fun initializePlayer(loadControl: LoadControl, binding: FlutterPluginBinding): ExoPlayer {
+        var player: ExoPlayer = ExoPlayer.Builder(binding.applicationContext).setLoadControl(loadControl).build()
         player.addListener(
             PluginPlayerListener(
                 player = player,
@@ -360,20 +359,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
 
     override fun onAttachedToActivity(binding: ActivityPluginBinding) {
         lifecycle = FlutterLifecycleAdapter.getActivityLifecycle(binding)
-        //TODO: HifiPlugin should derive from LifecycleObserver class
-
-//        lifecycle.addObserver(LifecycleEventObserver { x, _ ->
-//            lifecycle.coroutineScope.launch {
-//                x.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-//                    if (!player.isPlaying) {
-//                        eventsPositionTracking?.success(Json.encodeToString(PositionStateModel(position = 0,po)))
-//
-//                    }
-//                }
-//
-//            }
-//        })
-
         lifecycle.addObserver(LifecycleEventObserver { x, _ ->
             if (x.lifecycle.currentState == Lifecycle.State.CREATED) {
                 val filter: IntentFilter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
