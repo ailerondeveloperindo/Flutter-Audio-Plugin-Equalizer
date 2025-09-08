@@ -277,10 +277,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     @RequiresApi(Build.VERSION_CODES.Q)
     fun playPlaylist() {
         if (!player!!.isPlaying) {
-//            eq = Equalizer(0, player.audioSessionId)
-//            eq.usePreset(2)
-//            Log.d("Equalizer ---", eq.numberOfPresets.toString())
-//            Log.d("Equalizer Current Preset ---", eq.currentPreset.toString())
             player!!.prepare()
             player!!.play()
         }

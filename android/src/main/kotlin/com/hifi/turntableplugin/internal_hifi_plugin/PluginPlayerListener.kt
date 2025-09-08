@@ -1,6 +1,7 @@
 package com.hifi.turntableplugin.internal_hifi_plugin
 
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.media3.common.MediaItem
