@@ -45,6 +45,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     private lateinit var playStateChannel: EventChannel
     private lateinit var metaDataChannel: EventChannel
     private lateinit var deviceChannel: EventChannel
+    private lateinit var errorChannel: EventChannel
     protected var players: List<ExoPlayer> = emptyList() //TODO: Generate Player object through factory
     private var player: ExoPlayer? = null
     private lateinit var lifecycle: Lifecycle
@@ -55,6 +56,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     private var eventsPlayerState: EventChannel.EventSink? = null
     private var eventsMetadata: EventChannel.EventSink? = null
     private var deviceState: EventChannel.EventSink? = null
+    private var eventsError: EventChannel.EventSink? = null
     private lateinit var channel: MethodChannel
     private lateinit var audioProcessor: AudioProcessor
     private lateinit var binding: FlutterPluginBinding
@@ -98,6 +100,11 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
             PluginConstants.deviceStateEventChannel
         )
 
+        errorChannel = EventChannel(
+            flutterPluginBinding.binaryMessenger,
+            PluginConstants.deviceStateEventChannel
+        )
+
         positionTrackingChannel.setStreamHandler(object : EventChannel.StreamHandler {
             // Emitted when the flutter side starts listening to this EventChannel
             override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
@@ -107,6 +114,18 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
 
             override fun onCancel(arguments: Any?) {
                 eventsPositionTracking = null
+            }
+        })
+
+        errorChannel.setStreamHandler(object : EventChannel.StreamHandler {
+            // Emitted when the flutter side starts listening to this EventChannel
+            override fun onListen(arguments: Any?, events: EventChannel.EventSink) {
+                Log.d("ErrorChannel", "Setting Up EventChannel")
+                eventsError = events
+            }
+
+            override fun onCancel(arguments: Any?) {
+                eventsError = null
             }
         })
 
@@ -182,7 +201,8 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
                             lifecycle = lifecycle,
                             onListenVolumeChange = { deviceStateJson -> deviceState?.success(deviceStateJson) },
                             onListenPositionChange = { positionStateJson -> eventsPositionTracking?.success(positionStateJson) },
-                            onListenMediaMetadataChange = { mediaMetadata -> eventsMetadata?.success(mediaMetadata)})
+                            onListenMediaMetadataChange = { mediaMetadata -> eventsMetadata?.success(mediaMetadata)},
+                            onError = { error -> eventsError?.success(error) }) //TODO: Implement error on flutter side
                     )
                 }
 

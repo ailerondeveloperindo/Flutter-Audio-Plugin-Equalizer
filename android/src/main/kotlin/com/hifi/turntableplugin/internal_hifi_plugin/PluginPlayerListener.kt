@@ -27,6 +27,7 @@ class PluginPlayerListener(
     private var onListenVolumeChange: (deviceStateJson: String) -> Unit,
     private var onListenMediaMetadataChange: (mediaMetadataJson: String) -> Unit,
     private var onListenPositionChange: (positionStateJson: String) -> Unit,
+    private var onError: (errorJson: String) -> Unit,
 ) : Player.Listener {
 
     private fun positionTrackingFlow(): Flow<PositionStateModel?> = flow {
@@ -126,7 +127,7 @@ class PluginPlayerListener(
         // TODO: Send error to flutter
         Log.e("onPlayerError", error.toString())
         ErrorModel(message = error.message ?: "Unknown error", errorCode = error.errorCode, timestamp = error.timestampMs)
-
+        onError(Json.encodeToString(error))
     }
 
     override fun onMetadata(metadata: Metadata) {
