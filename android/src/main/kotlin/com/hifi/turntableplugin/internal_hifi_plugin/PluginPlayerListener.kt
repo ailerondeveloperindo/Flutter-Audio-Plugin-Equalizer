@@ -113,6 +113,8 @@ class PluginPlayerListener(
             lifecycle.coroutineScope.launch {
                 x.repeatOnLifecycle(Lifecycle.State.STARTED) {
                     positionTrackingFlow().collect {
+                        //TODO: Store Metadata and merge metadata tracking into position
+                        //TODO: Add Player State
                         onListenPositionChange(Json.encodeToString(it))
                     }
                 }
