@@ -1,6 +1,6 @@
-# internal_hifi_plugin
+# Flutter Audio Plugin + Equalizer (Android only)
 
-A new Flutter plugin project.
+
 
 ## Getting Started
 
