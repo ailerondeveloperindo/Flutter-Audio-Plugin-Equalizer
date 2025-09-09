@@ -145,7 +145,7 @@ class PluginPlayerListener(
                         position = player.currentPosition.toInt(),
                         durationMs = PluginUtils.MetaDataUtils.getTrackDuration(player)
                     )
-                onListenMediaMetadataChange(Json.encodeToString(currentPositionModel))
+                onListenPositionChange(Json.encodeToString(currentPositionModel))
             }
         }
     }
