@@ -11,6 +11,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import com.hifi.turntableplugin.internal_hifi_plugin.models.DeviceStateModel
+import com.hifi.turntableplugin.internal_hifi_plugin.models.ErrorModel
 import com.hifi.turntableplugin.internal_hifi_plugin.models.PositionStateModel
 import io.flutter.Log
 import kotlinx.coroutines.delay
@@ -124,6 +125,7 @@ class PluginPlayerListener(
     override fun onPlayerError(error: PlaybackException) {
         // TODO: Send error to flutter
         Log.e("onPlayerError", error.toString())
+        ErrorModel(message = error.message ?: "Unknown error", errorCode = error.errorCode, timestamp = error.timestampMs)
 
     }
 
