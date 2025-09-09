@@ -176,7 +176,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
                         .build()
                     // TODO: Push initialized player object to list and return instance id (Managing MultiInstance)
                     player = initializePlayer(loadControl, binding);
-                    player!!.addListener(
+                    player?.addListener(
                         PluginPlayerListener(
                             player = player!!,
                             lifecycle = lifecycle,
@@ -259,18 +259,6 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
 
     fun addSongToPlaylist(uri: String) {
         val mediaItem = MediaItem.fromUri(uri)
-        // TODO: Check for duplicate songs
-        // TODO: Check if url invalid
-//        if(player.mediaItemCount > 0)
-//        {
-//            for(i in 0 until player.mediaItemCount)
-//            {
-//                if(player.getMediaItemAt(i) == mediaItem)
-//                {
-//                    return
-//                }
-//            }
-//        }
         player!!.addMediaItem(mediaItem)
     }
 
