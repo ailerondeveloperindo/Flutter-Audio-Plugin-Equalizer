@@ -28,7 +28,7 @@ class PluginUtils {
             metadataModel.durationMs = mediaMetadata.durationMs ?: 0
             metadataModel.composer = mediaMetadata.composer?.toString()
             metadataModel.conductor = mediaMetadata.conductor?.toString()
-            metadataModel.albumArtworkBase64 = if (mediaMetadata.artworkData != null) Base64.encodeToString(mediaMetadata.artworkData, Base64.DEFAULT) else null
+            metadataModel.albumArtworkBase64 = if (mediaMetadata.artworkData != null) Base64.encodeToString(mediaMetadata.artworkData, Base64.NO_WRAP) else null
             metadataModel.artworkDataType = mediaMetadata.artworkDataType
             metadataModel.artworkUri = mediaMetadata.artworkUri?.toString()
             metadataModel.trackNumber = mediaMetadata.trackNumber
