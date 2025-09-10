@@ -25,9 +25,9 @@ class AlbumArtworkModel {
 }
 
 class SongMetadataModel {
-  String? songTitle;
-  String? songArtist;
-  String? songAlbum;
+  String? title;
+  String? artist;
+  String? album;
   int? recordingYear;
   int? recordingMonth;
   int? recordingDay;
@@ -40,10 +40,10 @@ class SongMetadataModel {
   String? genre;
   String? compilation;
   String? station;
-  int songDurationMs;
-  String? songSize;
-  String? songAuthor;
-  String? songComposer;
+  int durationMs;
+  String? size;
+  String? author;
+  String? composer;
   int? userRating;
   int? overallRating;
   String? conductor;
@@ -54,9 +54,9 @@ class SongMetadataModel {
   int? totalTrackCount;
 
   SongMetadataModel({
-    this.songTitle,
-    this.songArtist,
-    this.songAlbum,
+    this.title,
+    this.artist,
+    this.album,
     this.recordingYear,
     this.recordingMonth,
     this.recordingDay,
@@ -69,10 +69,10 @@ class SongMetadataModel {
     this.genre,
     this.compilation,
     this.station,
-    this.songDurationMs = 0,
-    this.songSize,
-    this.songAuthor,
-    this.songComposer,
+    this.durationMs = 0,
+    this.size,
+    this.author,
+    this.composer,
     this.userRating,
     this.overallRating,
     this.conductor,
@@ -85,9 +85,9 @@ class SongMetadataModel {
 
   factory SongMetadataModel.fromJson(Map<String, dynamic> json) {
     return SongMetadataModel(
-      songTitle: json['songTitle'] as String?,
-      songArtist: json['songArtist'] as String?,
-      songAlbum: json['songAlbum'] as String?,
+      title: json['title'] as String?,
+      artist: json['artist'] as String?,
+      album: json['album'] as String?,
       recordingYear: json['recordingYear'] as int?,
       recordingMonth: json['recordingMonth'] as int?,
       recordingDay: json['recordingDay'] as int?,
@@ -100,10 +100,10 @@ class SongMetadataModel {
       genre: json['genre'] as String?,
       compilation: json['compilation'] as String?,
       station: json['station'] as String?,
-      songDurationMs: json['songDurationMs'] as int? ?? 0,
-      songSize: json['songSize'] as String?,
-      songAuthor: json['songAuthor'] as String?,
-      songComposer: json['songComposer'] as String?,
+      durationMs: json['songDurationMs'] as int? ?? 0,
+      size: json['size'] as String?,
+      author: json['author'] as String?,
+      composer: json['composer'] as String?,
       userRating: json['userRating'] as int?,
       overallRating: json['overallRating'] as int?,
       conductor: json['conductor'] as String?,
@@ -117,9 +117,9 @@ class SongMetadataModel {
 
   Map<String, dynamic> toJson() {
     return {
-      'songTitle': songTitle,
-      'songArtist': songArtist,
-      'songAlbum': songAlbum,
+      'title': title,
+      'artist': artist,
+      'album': album,
       'recordingYear': recordingYear,
       'recordingMonth': recordingMonth,
       'recordingDay': recordingDay,
@@ -132,10 +132,10 @@ class SongMetadataModel {
       'genre': genre,
       'compilation': compilation,
       'station': station,
-      'songDurationMs': songDurationMs,
-      'songSize': songSize,
-      'songAuthor': songAuthor,
-      'songComposer': songComposer,
+      'durationMs': durationMs,
+      'size': size,
+      'author': author,
+      'composer': composer,
       'userRating': userRating,
       'overallRating': overallRating,
       'conductor': conductor,
