@@ -58,7 +58,7 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
     private var deviceState: EventChannel.EventSink? = null
     private var eventsError: EventChannel.EventSink? = null
     private lateinit var channel: MethodChannel
-    private lateinit var audioProcessor: AudioProcessor
+//    private lateinit var audioProcessor: AudioProcessor
     private lateinit var binding: FlutterPluginBinding
 
 
@@ -246,17 +246,17 @@ class InternalHifiPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, Broa
 
                 "setBandLevel" -> {
                     Log.d("setBandLevel methodCall", (call.arguments as ArrayList<*>)[0].toString())
-                    audioProcessor.setBandDetails(
-                        Json.decodeFromString(
-                            BandLevels.serializer(),
-                            (call.arguments as ArrayList<*>)[0].toString()
-                        )
-                    )
+//                    audioProcessor.setBandDetails(
+//                        Json.decodeFromString(
+//                            BandLevels.serializer(),
+//                            (call.arguments as ArrayList<*>)[0].toString()
+//                        )
+//                    )
                 }
 
                 "getBandLevel" -> {
-                    Log.d("getBandLevel methodCall", Json.encodeToString(audioProcessor.getBandDetails()))
-                    result.success(Json.encodeToString(audioProcessor.getBandDetails()))
+//                    Log.d("getBandLevel methodCall", Json.encodeToString(audioProcessor.getBandDetails()))
+//                    result.success(Json.encodeToString(audioProcessor.getBandDetails()))
                 }
 
                 "setRepeatMode" -> {
