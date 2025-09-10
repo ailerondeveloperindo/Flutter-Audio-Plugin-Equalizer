@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class AlbumArtworkModel {
-    var songAlbumCoverBase64: String? = null
+    var albumArtworkBase64: String? = null
     var artworkDataType: String? = null
 }
 

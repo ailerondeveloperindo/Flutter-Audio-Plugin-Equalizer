@@ -1,24 +1,24 @@
 import 'dart:convert';
 
 class AlbumArtworkModel {
-  String? songAlbumCoverBase64;
+  String? albumArtworkBase64;
   String? artworkDataType;
 
   AlbumArtworkModel({
-    this.songAlbumCoverBase64,
+    this.albumArtworkBase64,
     this.artworkDataType,
   });
 
   factory AlbumArtworkModel.fromJson(Map<String, dynamic> json) {
     return AlbumArtworkModel(
-      songAlbumCoverBase64: json['songAlbumCoverBase64'] as String?,
+      albumArtworkBase64: json['albumArtworkBase64'] as String?,
       artworkDataType: json['artworkDataType'] as String?,
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
-      'songAlbumCoverBase64': songAlbumCoverBase64,
+      'albumArtworkBase64': albumArtworkBase64,
       'artworkDataType': artworkDataType,
     };
   }
@@ -47,7 +47,7 @@ class SongMetadataModel {
   int? userRating;
   int? overallRating;
   String? conductor;
-  String? songAlbumCoverBase64;
+  String? albumArtworkBase64;
   int? artworkDataType;
   String? artworkUri;
   int? trackNumber;
@@ -76,7 +76,7 @@ class SongMetadataModel {
     this.userRating,
     this.overallRating,
     this.conductor,
-    this.songAlbumCoverBase64,
+    this.albumArtworkBase64,
     this.artworkDataType,
     this.artworkUri,
     this.trackNumber,
@@ -107,7 +107,7 @@ class SongMetadataModel {
       userRating: json['userRating'] as int?,
       overallRating: json['overallRating'] as int?,
       conductor: json['conductor'] as String?,
-      songAlbumCoverBase64: json['songAlbumCoverBase64'] as String?,
+      albumArtworkBase64: json['albumArtworkBase64'] as String?,
       artworkDataType: json['artworkDataType'] as int?,
       artworkUri: json['artworkUri'] as String?,
       trackNumber: json['trackNumber'] as int?,
@@ -139,7 +139,7 @@ class SongMetadataModel {
       'userRating': userRating,
       'overallRating': overallRating,
       'conductor': conductor,
-      'songAlbumCoverBase64': songAlbumCoverBase64,
+      'albumArtworkBase64': albumArtworkBase64,
       'artworkDataType': artworkDataType,
       'artworkUri': artworkUri,
       'trackNumber': trackNumber,
